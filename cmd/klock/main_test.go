@@ -280,7 +280,7 @@ func cleanupLeases() error {
 }
 
 const (
-	klock   = "../../dist/klock"
+	klock   = "../../bin/klock"
 	kubectl = "../../hack/kubectl"
 )
 
@@ -307,10 +307,10 @@ func newMake(arg ...string) *runner {
 }
 
 func buildBinaries() error {
-	if err := newMake("dist/klock").run().err; err != nil {
+	if err := newMake("bin/klock").run().err; err != nil {
 		return err
 	}
-	return newMake("dist/klock-incluster-test").run().err
+	return newMake("bin/klock-incluster-test").run().err
 }
 
 type runner struct {

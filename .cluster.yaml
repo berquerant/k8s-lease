@@ -7,6 +7,6 @@ containerdConfigPatches:
 nodes:
   - role: control-plane
     extraMounts:
-      - hostPath: dist
+      - hostPath: bin
         containerPath: /mnt/local-data
         readOnly: true

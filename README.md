@@ -3,7 +3,7 @@
 # k8s-lease
 
 ```
-❯ ./dist/klock --help
+❯ klock --help
 klock -- manage locks from shell scripts within Kubernetes
 
 # Usage

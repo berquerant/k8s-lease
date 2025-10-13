@@ -1,7 +1,7 @@
-BIN = dist/klock
+BIN = bin/klock
 CMD = "./cmd/klock"
 THIRD_PARTY_LICENSES = NOTICE
-BIN_TEST = dist/klock-incluster-test
+BIN_TEST = bin/klock-incluster-test
 
 #
 # Build
@@ -77,14 +77,3 @@ generate:
 .PHONY: clean-generated
 clean-generated:
 	find . -name "*_generated.go" -type f -delete
-
-#
-# etc
-#
-
-.PHONY: clean
-clean: clean-dist
-
-.PHONY: clean-dist
-clean-dist:
-	rm -f $(BIN) $(BIN_TEST)
