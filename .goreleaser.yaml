@@ -21,6 +21,8 @@ builds:
       - goos: linux
         goarch: arm
         goarm: 6
+      - goos: windows
+        goarch: arm
     flags:
       - -v
       - -trimpath
