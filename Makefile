@@ -1,7 +1,7 @@
 BIN = bin/klock
 CMD = "./cmd/klock"
 THIRD_PARTY_LICENSES = NOTICE
-BIN_TEST = bin/klock-incluster-test
+TEST_BIN = bin/klock-incluster-test
 
 #
 # Build
@@ -19,7 +19,7 @@ $(BIN):
 test: test-unit test-e2e
 
 .PHONY: test-e2e
-test-e2e: $(BIN) $(BIN_TEST) setup-cluster
+test-e2e: $(BIN) $(TEST_BIN) setup-cluster
 	go test -race ./cmd/...
 
 .PHONY: test-unit
@@ -30,8 +30,8 @@ test-unit: setup-cluster
 setup-cluster:
 	./hack/setup-cluster.sh $(KIND_NODE_IMAGE)
 
-.PHONY: $(BIN_TEST)
-$(BIN_TEST):
+.PHONY: $(TEST_BIN)
+$(TEST_BIN):
 	GOOS=linux ./bin/build.sh -o $@ $(CMD)
 
 #

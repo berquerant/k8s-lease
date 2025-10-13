@@ -32,7 +32,7 @@ func TestE2E(t *testing.T) {
 			namespace     = "default"
 			localPath     = "/mnt/local-data" // from .cluster.yaml
 			containerPath = "/usr/local/dist"
-			binary        = "klock-incluster-test" // from Makefile BIN_TEST
+			binary        = "klock-incluster-test" // from Makefile TEST_BIN
 			manifest      = `---
 apiVersion: batch/v1
 kind: Job
