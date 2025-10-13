@@ -52,7 +52,7 @@ jobs:
   test-e2e:
     timeout-minutes: 10
     permissions:
-      contents: read
+      contents: write # for build binaries to dist/
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
