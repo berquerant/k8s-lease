@@ -42,4 +42,4 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION_PACKAGE: "github.com/berquerant/klock/version"
+          VERSION_PACKAGE: "github.com/berquerant/k8s-lease/version"
