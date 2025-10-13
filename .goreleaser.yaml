@@ -1,0 +1,44 @@
+version: 2
+
+builds:
+  - main: ./cmd/klock
+    id: klock
+    binary: klock
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+      - arm
+    goarm:
+      - 6
+      - 7
+    ignore:
+      - goos: linux
+        goarch: arm
+        goarm: 6
+    flags:
+      - -v
+      - -trimpath
+    ldflags:
+      - -s -w -X {{ .Env.VERSION_PACKAGE }}.Version={{ .Env.VERSION }} -X {{ .Env.VERSION_PACKAGE }}.Revision={{ .Env.REVISION }}
+
+archives:
+  - formats: binary
+    id: klock
+    files:
+      - NOTICE
+
+checksum:
+  name_template: 'checksums.txt'
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
