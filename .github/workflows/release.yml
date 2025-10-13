@@ -24,7 +24,9 @@ jobs:
       - name: Setup go
         uses: ./.github/actions/setup-go
       - name: Create kind cluster
-        uses: helm/kind-action@a1b0e391336a6ee6713a0583f8c6240d70863de3 # v1.12.0
+        uses: ./.github/actions/setup-cluster
+        with:
+          node_image: '${{ env.KIND_NODE_IMAGE }}'
       - name: Lint
         run: make lint
       - name: Test

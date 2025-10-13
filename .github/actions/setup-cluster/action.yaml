@@ -1,0 +1,15 @@
+name: Cluster Setup
+description: Setup cluster
+inputs:
+  cluster_name:
+    default: 'kind'
+  node_image:
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Create kind cluster
+      uses: helm/kind-action@a1b0e391336a6ee6713a0583f8c6240d70863de3 # v1.12.0
+      with:
+        node_image: '${{ inputs.node_image }}'
+        cluster_name: '${{ inputs.cluster_name }}'
