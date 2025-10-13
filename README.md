@@ -1,3 +1,5 @@
+[![Go Report Card](https://goreportcard.com/badge/github.com/berquerant/k8s-lease)](https://goreportcard.com/report/github.com/berquerant/k8s-lease)
+
 # k8s-lease
 
 ```
