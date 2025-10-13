@@ -20,6 +20,7 @@ fi
 if [[ "$CI" = "true" ]] ; then
     if ! kind get clusters | grep -q 'kind' ; then
         log "No Kind cluster is running. Please start a Kind cluster before running the e2e tests."
+        exit 1
     fi
 else
     log "To avoid errors caused by pre-existing resources in the kind cluster before make test-unit, make test-e2e, we will recreate the cluster."
