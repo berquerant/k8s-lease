@@ -17,7 +17,7 @@ klock acquires a lock via a holder identity from a lease, which is created if it
 
 The following labels are always applied to leases created by klock:
 
-app.kubernetes.io/managed-by=klock
+app.kubernetes.io/managed-by=k8s-lease-klock
 
 # Examples
 

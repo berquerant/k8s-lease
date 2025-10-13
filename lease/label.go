@@ -3,7 +3,7 @@ package lease
 import "k8s.io/apimachinery/pkg/labels"
 
 const (
-	toolName  = "klock"
+	toolName  = "k8s-lease-klock"
 	managedBy = "app.kubernetes.io/managed-by"
 )
 

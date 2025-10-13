@@ -56,7 +56,7 @@ var _ = Describe("Locker", func() {
 			x, err := getLease(ctx, name)
 			Expect(err).To(Succeed())
 			labs := k8slabels.Set(x.GetLabels())
-			Expect(labs.Get("app.kubernetes.io/managed-by")).To(Equal("klock"))
+			Expect(labs.Get("app.kubernetes.io/managed-by")).To(Equal("k8s-lease-klock"))
 			Expect(labs.Get("additional")).To(Equal("label"))
 		})
 	})

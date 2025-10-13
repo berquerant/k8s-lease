@@ -265,7 +265,7 @@ crispy
 			want := map[string]string{
 				"key1":                         "value1",
 				"key2":                         "value2",
-				"app.kubernetes.io/managed-by": "klock",
+				"app.kubernetes.io/managed-by": "k8s-lease-klock",
 			}
 			assert.Equal(t, want, got)
 		})
