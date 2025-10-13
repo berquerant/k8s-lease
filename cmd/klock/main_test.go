@@ -25,6 +25,9 @@ func TestE2E(t *testing.T) {
 	defer func() {
 		_ = cleanupLeases()
 	}()
+	if !assert.Nil(t, buildBinaries()) {
+		return
+	}
 
 	t.Run("incluster", func(t *testing.T) {
 		const (
@@ -295,10 +298,26 @@ func newKubectl(arg ...string) *runner {
 	}
 }
 
+func newMake(arg ...string) *runner {
+	return &runner{
+		program: "make",
+		args:    arg,
+		dir:     "../..",
+	}
+}
+
+func buildBinaries() error {
+	if err := newMake("dist/klock").run().err; err != nil {
+		return err
+	}
+	return newMake("dist/klock-incluster-test").run().err
+}
+
 type runner struct {
 	program string
 	args    []string
 	stdin   string
+	dir     string
 }
 
 type result struct {
@@ -315,6 +334,9 @@ func (r *result) assertSuccess(t *testing.T) {
 
 func (r *runner) run() *result {
 	cmd := exec.Command(r.program, r.args...)
+	if x := r.dir; x != "" {
+		cmd.Dir = x
+	}
 	fmt.Fprintf(os.Stderr, "[runner.run] %v\n", cmd.Args)
 	if s := r.stdin; s != "" {
 		cmd.Stdin = bytes.NewBufferString(s)
