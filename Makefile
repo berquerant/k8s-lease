@@ -19,7 +19,7 @@ $(BIN):
 test: test-unit test-e2e
 
 .PHONY: test-e2e
-test-e2e: setup-cluster
+test-e2e: $(BIN) $(BIN_TEST) setup-cluster
 	go test -race ./cmd/...
 
 .PHONY: test-unit

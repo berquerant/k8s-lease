@@ -25,9 +25,6 @@ func TestE2E(t *testing.T) {
 	defer func() {
 		_ = cleanupLeases()
 	}()
-	if !assert.Nil(t, buildBinaries()) {
-		return
-	}
 
 	t.Run("incluster", func(t *testing.T) {
 		const (
@@ -296,21 +293,6 @@ func newKubectl(arg ...string) *runner {
 		program: kubectl,
 		args:    arg,
 	}
-}
-
-func newMake(arg ...string) *runner {
-	return &runner{
-		program: "make",
-		args:    arg,
-		dir:     "../..",
-	}
-}
-
-func buildBinaries() error {
-	if err := newMake("bin/klock").run().err; err != nil {
-		return err
-	}
-	return newMake("bin/klock-incluster-test").run().err
 }
 
 type runner struct {
