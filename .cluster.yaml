@@ -1,0 +1,12 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+containerdConfigPatches:
+  - |
+    [host."https://mirror.gcr.io"]
+      capabilities = ["pull", "resolve"]
+nodes:
+  - role: control-plane
+    extraMounts:
+      - hostPath: dist
+        containerPath: /mnt/local-data
+        readOnly: true

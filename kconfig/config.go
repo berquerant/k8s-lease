@@ -10,7 +10,14 @@ import (
 
 // Build kubeconfig.
 func Build(kubeconfig string) (*rest.Config, error) {
+	if c, err := buildInCluster(); err == nil {
+		return c, nil
+	}
 	return build(selectPath(kubeconfig))
+}
+
+func buildInCluster() (*rest.Config, error) {
+	return rest.InClusterConfig()
 }
 
 func build(kubeconfig string) (*rest.Config, error) {

@@ -3,6 +3,8 @@
 set -e
 set -o pipefail
 
+readonly d="$(cd "$(dirname "$0")" || exit 1 ; pwd)"
+
 log() {
     echo >&2 "$(basename "$0"): $*"
 }
@@ -25,5 +27,5 @@ if [[ "$CI" = "true" ]] ; then
 else
     log "To avoid errors caused by pre-existing resources in the kind cluster before make test-unit, make test-e2e, we will recreate the cluster."
     kind delete cluster || true
-    kind create cluster --image "$1"
+    kind create cluster --image "$1" --config "${d}/../.cluster.yaml"
 fi

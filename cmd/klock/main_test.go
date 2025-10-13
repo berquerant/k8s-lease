@@ -19,15 +19,115 @@ import (
 )
 
 func TestE2E(t *testing.T) {
-	if !assert.Nil(t, build(), "should build klock binary") {
-		return
-	}
 	if !assert.Nil(t, cleanupLeases()) {
 		return
 	}
 	defer func() {
 		_ = cleanupLeases()
 	}()
+
+	t.Run("incluster", func(t *testing.T) {
+		const (
+			name          = "test-incluster-run"
+			namespace     = "default"
+			localPath     = "/mnt/local-data" // from .cluster.yaml
+			containerPath = "/usr/local/dist"
+			binary        = "klock-incluster-test" // from Makefile BIN_TEST
+			manifest      = `---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: %[2]s
+  namespace: %[1]s
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      serviceAccountName: %[2]s
+      restartPolicy: Never
+      terminationGracePeriodSeconds: 1
+      containers:
+      - name: main
+        image: debian:trixie-slim
+        command:
+        - bash
+        - -c
+        - |
+          set -ex
+          ln -s "%[4]s/%[5]s" /usr/local/bin/klock
+          readonly name="%[2]s"
+          klock -l "$name" -i "${name}-id" -- echo "[incluster.echo] OK"
+        volumeMounts:
+        - name: local-data
+          readOnly: true
+          mountPath: %[4]s
+      volumes:
+      - name: local-data
+        hostPath:
+          path: %[3]s
+          type: DirectoryOrCreate
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: %[2]s
+  namespace: %[1]s
+rules:
+- apiGroups: ["coordination.k8s.io"]
+  resources: ["leases"]
+  verbs: ["create", "get", "patch", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: %[2]s
+  namespace: %[1]s
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: %[2]s
+subjects:
+- kind: ServiceAccount
+  name: %[2]s
+  namespace: %[1]s
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  namespace: %[1]s
+  name: %[2]s
+`
+		)
+		var (
+			manifestPath   = filepath.Join(t.TempDir(), "test.yaml")
+			renderManifest = func() string {
+				return fmt.Sprintf(manifest,
+					namespace,
+					name,
+					localPath,
+					containerPath,
+					binary,
+				)
+			}
+			cleanup = func() error {
+				return newKubectl("delete", "-f", manifestPath, "--ignore-not-found=true").run().err
+			}
+		)
+		if !assert.Nil(t, os.WriteFile(manifestPath, []byte(renderManifest()), 0644)) {
+			return
+		}
+		if !assert.Nil(t, cleanup()) {
+			return
+		}
+		defer cleanup()
+		if !assert.Nil(t, newKubectl("apply", "-f", manifestPath).run().err) {
+			return
+		}
+		assert.Nil(t, newKubectl("wait", "--for=condition=complete", "job/"+name, "--timeout=60s").run().err)
+		r := newKubectl("logs", "job/"+name).run()
+		assert.Nil(t, r.err)
+		t.Log(r.stdout, r.stderr)
+	})
 
 	t.Run("serial", func(t *testing.T) {
 		for _, tc := range []struct {
@@ -170,14 +270,6 @@ crispy
 			assert.Equal(t, want, got)
 		})
 	})
-}
-
-func build() error {
-	cmd := exec.Command("make")
-	cmd.Dir = "../.."
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
 }
 
 func cleanupLeases() error {

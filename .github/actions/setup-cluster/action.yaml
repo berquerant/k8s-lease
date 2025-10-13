@@ -5,6 +5,8 @@ inputs:
     default: 'kind'
   node_image:
     required: true
+  config:
+    default: .cluster.yaml
 runs:
   using: "composite"
   steps:
@@ -13,3 +15,4 @@ runs:
       with:
         node_image: '${{ inputs.node_image }}'
         cluster_name: '${{ inputs.cluster_name }}'
+        config: '${{ inputs.config }}'
