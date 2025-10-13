@@ -77,3 +77,14 @@ generate:
 .PHONY: clean-generated
 clean-generated:
 	find . -name "*_generated.go" -type f -delete
+
+#
+# etc
+#
+
+.PHONY: clean
+clean: clean-dist
+
+.PHONY: clean-dist
+clean-dist:
+	rm -f $(BIN) $(BIN_TEST)
