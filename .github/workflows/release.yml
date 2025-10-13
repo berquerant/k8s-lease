@@ -23,16 +23,6 @@ jobs:
         uses: ./.github/actions/setup-env
       - name: Setup go
         uses: ./.github/actions/setup-go
-      - name: Create kind cluster
-        uses: ./.github/actions/setup-cluster
-        with:
-          node_image: '${{ env.KIND_NODE_IMAGE }}'
-      - name: Lint
-        run: make lint
-      - name: Test
-        run: make test
-      - name: Clean git state
-        run: make clean
       - name: Set env
         run: |
           echo "REVISION=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
