@@ -31,6 +31,8 @@ jobs:
         run: make lint
       - name: Test
         run: make test
+      - name: Clean git state
+        run: git clean -d -f
       - name: Set env
         run: |
           echo "REVISION=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
