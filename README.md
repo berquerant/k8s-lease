@@ -19,6 +19,15 @@ The following labels are always applied to leases created by klock:
 
 app.kubernetes.io/managed-by=klock
 
+# Examples
+
+Suppose you have a command, some_cmd, that you want to run regularly but not concurrently.
+You can execute multiple instances of some_cmd exclusively using klock.
+
+  klock -l some_cmd_lease -i "$(uuidgen)" -- some_cmd
+
+A unique uuid is associated with the execution of some_cmd as the holder identity.
+
 # Exit status
 
 1 if failure.
