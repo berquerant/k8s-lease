@@ -10,7 +10,7 @@ klock -- manage locks from shell scripts within Kubernetes
 
   klock [flags] -- command [arguments]
 
-klock manages the Kubernetes lease locks from within shell scripts or from the command line.
+klock manages the Kubernetes lease locks from shell scripts or from the command line.
 
 klock runs the provided command (or a command with arguments) with mutual exclusion guaranteed by a lease.
 klock acquires a lock via a holder identity from a lease, which is created if it does not already exist.
@@ -22,7 +22,7 @@ app.kubernetes.io/managed-by=klock
 # Exit status
 
 1 if failure.
-The exit status of the given command, if klock is executed it.
+The exit status of the given command, if klock executed it.
 
 # Flags
       --cleanup-lease              If true, delete the created lease after processing.
