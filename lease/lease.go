@@ -149,12 +149,12 @@ func (s *Locker) LockAndRun(ctx context.Context, f func(context.Context), opt ..
 		case <-ctx.Done():
 			electResultC <- electCanceled
 		case <-time.After(timeout):
+			logger.Info("Aborting the process because the leader election timed out")
 			cancel()
 			electResultC <- electTimedOut
-			logger.Info("Aborting the process because the leader election timed out")
 		case <-startedC:
+			logger.Info("Starting the process because the leader election succeeded")
 			electResultC <- electSucceeded
-			logger.Debug("Starting the process because the leader election succeeded")
 		}
 	}()
 
