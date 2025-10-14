@@ -28,12 +28,28 @@ You can execute multiple instances of some_cmd exclusively using klock.
 
 A unique uuid is associated with the execution of some_cmd as the holder identity.
 
+# Permissions
+
+The execution of klock requires permissions similar to the following role:
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: klock-role
+rules:
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["create", "get", "update", "patch"]
+
+If you use --cleanup-lease, please add delete to the verbs.
+
 # Exit status
 
 1 if failure.
 The exit status of the given command, if klock executed it.
 
 # Flags
+
       --cleanup-lease              If true, delete the created lease after processing.
   -E, --conflict-exit-code uint8   The exit status used when the -w option is in use, and the timeout is reached. (default 1)
       --debug                      Enable debug logs.

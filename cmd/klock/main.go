@@ -55,12 +55,28 @@ You can execute multiple instances of some_cmd exclusively using klock.
 
 A unique uuid is associated with the execution of some_cmd as the holder identity.
 
+# Permissions
+
+The execution of klock requires permissions similar to the following role:
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: klock-role
+rules:
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["create", "get", "update", "patch"]
+
+If you use --cleanup-lease, please add delete to the verbs.
+
 # Exit status
 
 %d if failure.
 The exit status of the given command, if klock executed it.
 
 # Flags
+
 `
 
 func main() {
