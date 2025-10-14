@@ -1,133 +1,25 @@
 package main_test
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/berquerant/k8s-lease/lease"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/apimachinery/pkg/labels"
 )
 
-func TestE2E(t *testing.T) {
+func TestCommand(t *testing.T) {
 	if !assert.Nil(t, cleanupLeases()) {
 		return
 	}
 	defer func() {
 		_ = cleanupLeases()
 	}()
-
-	t.Run("incluster", func(t *testing.T) {
-		const (
-			name          = "test-incluster-run"
-			namespace     = "default"
-			localPath     = "/mnt/local-data" // from .cluster.yaml
-			containerPath = "/usr/local/dist"
-			binary        = "klock-incluster-test" // from Makefile TEST_BIN
-			manifest      = `---
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: %[2]s
-  namespace: %[1]s
-spec:
-  backoffLimit: 1
-  template:
-    spec:
-      serviceAccountName: %[2]s
-      restartPolicy: Never
-      terminationGracePeriodSeconds: 1
-      containers:
-      - name: main
-        image: debian:trixie-slim
-        command:
-        - bash
-        - -c
-        - |
-          set -ex
-          ln -s "%[4]s/%[5]s" /usr/local/bin/klock
-          readonly name="%[2]s"
-          klock -l "$name" -i "${name}-id" -- echo "[incluster.echo] OK"
-        volumeMounts:
-        - name: local-data
-          readOnly: true
-          mountPath: %[4]s
-      volumes:
-      - name: local-data
-        hostPath:
-          path: %[3]s
-          type: DirectoryOrCreate
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: %[2]s
-  namespace: %[1]s
-rules:
-- apiGroups: ["coordination.k8s.io"]
-  resources: ["leases"]
-  verbs: ["create", "get", "patch", "update"]
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: %[2]s
-  namespace: %[1]s
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: %[2]s
-subjects:
-- kind: ServiceAccount
-  name: %[2]s
-  namespace: %[1]s
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  namespace: %[1]s
-  name: %[2]s
-`
-		)
-		var (
-			manifestPath   = filepath.Join(t.TempDir(), "test.yaml")
-			renderManifest = func() string {
-				return fmt.Sprintf(manifest,
-					namespace,
-					name,
-					localPath,
-					containerPath,
-					binary,
-				)
-			}
-			cleanup = func() error {
-				return newKubectl("delete", "-f", manifestPath, "--ignore-not-found=true").run().err
-			}
-		)
-		if !assert.Nil(t, os.WriteFile(manifestPath, []byte(renderManifest()), 0644)) {
-			return
-		}
-		if !assert.Nil(t, cleanup()) {
-			return
-		}
-		defer cleanup()
-		if !assert.Nil(t, newKubectl("apply", "-f", manifestPath).run().err) {
-			return
-		}
-		assert.Nil(t, newKubectl("wait", "--for=condition=complete", "job/"+name, "--timeout=60s").run().err)
-		r := newKubectl("logs", "job/"+name).run()
-		assert.Nil(t, r.err)
-		t.Log(r.stdout, r.stderr)
-	})
 
 	t.Run("serial", func(t *testing.T) {
 		for _, tc := range []struct {
@@ -270,70 +162,4 @@ crispy
 			assert.Equal(t, want, got)
 		})
 	})
-}
-
-func cleanupLeases() error {
-	return newKubectl("delete", "lease", "-l", labels.SelectorFromSet(lease.CommonLabels()).String()).run().err
-}
-
-const (
-	klock   = "../../bin/klock"
-	kubectl = "../../hack/kubectl"
-)
-
-func newKlock(arg ...string) *runner {
-	return &runner{
-		program: klock,
-		args:    arg,
-	}
-}
-
-func newKubectl(arg ...string) *runner {
-	return &runner{
-		program: kubectl,
-		args:    arg,
-	}
-}
-
-type runner struct {
-	program string
-	args    []string
-	stdin   string
-	dir     string
-}
-
-type result struct {
-	stdout     string
-	stderr     string
-	exitStatus int
-	err        error
-}
-
-func (r *result) assertSuccess(t *testing.T) {
-	assert.Nil(t, r.err)
-	assert.Zero(t, r.exitStatus)
-}
-
-func (r *runner) run() *result {
-	cmd := exec.Command(r.program, r.args...)
-	if x := r.dir; x != "" {
-		cmd.Dir = x
-	}
-	fmt.Fprintf(os.Stderr, "[runner.run] %v\n", cmd.Args)
-	if s := r.stdin; s != "" {
-		cmd.Stdin = bytes.NewBufferString(s)
-	}
-	var (
-		stdout bytes.Buffer
-		stderr bytes.Buffer
-	)
-	cmd.Stdout = io.MultiWriter(os.Stdout, &stdout)
-	cmd.Stderr = io.MultiWriter(os.Stderr, &stderr)
-	err := cmd.Run()
-	return &result{
-		stdout:     stdout.String(),
-		stderr:     stderr.String(),
-		err:        err,
-		exitStatus: cmd.ProcessState.ExitCode(),
-	}
 }

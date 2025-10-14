@@ -1,0 +1,63 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ .Name }}"
+  namespace: "{{ .Namespace }}"
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      serviceAccountName: "{{ .Name }}"
+      restartPolicy: Never
+      terminationGracePeriodSeconds: 1
+      containers:
+        - name: main
+          image: debian:trixie-slim
+          command:
+            - bash
+            - -c
+            - |
+              set -ex
+              ln -s "{{ .ContainerPath }}/{{ .Binary }}" /usr/local/bin/klock
+              readonly name="{{ .Name }}"
+              klock -l "$name" -i "${name}-id" -- echo "[incluster.echo] OK"
+          volumeMounts:
+            - name: local-data
+              readOnly: true
+              mountPath: "{{ .ContainerPath }}"
+      volumes:
+        - name: local-data
+          hostPath:
+            path: "{{ .LocalPath }}"
+            type: DirectoryOrCreate
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: "{{ .Name }}"
+  namespace: "{{ .Namespace }}"
+rules:
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["create", "get", "patch", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: "{{ .Name }}"
+  namespace: "{{ .Namespace }}"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: "{{ .Name }}"
+subjects:
+  - kind: ServiceAccount
+    name: "{{ .Name }}"
+    namespace: "{{ .Namespace }}"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: "{{ .Name }}"
+  namespace: "{{ .Namespace }}"
