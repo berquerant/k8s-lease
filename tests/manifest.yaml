@@ -21,7 +21,7 @@ spec:
               set -ex
               ln -s "{{ .ContainerPath }}/{{ .Binary }}" /usr/local/bin/klock
               readonly name="{{ .Name }}"
-              klock -l "$name" -i "${name}-1" -- /usr/local/bin/run.sh
+              timeout 30 klock -l "$name" -i "${name}-1" -- /usr/local/bin/run.sh
           volumeMounts:
             - name: local-data
               readOnly: true
@@ -39,7 +39,7 @@ spec:
               set -ex
               ln -s "{{ .ContainerPath }}/{{ .Binary }}" /usr/local/bin/klock
               readonly name="{{ .Name }}"
-              klock -l "$name" -i "${name}-2" -- /usr/local/bin/run.sh
+              timeout 30 klock -l "$name" -i "${name}-2" -- /usr/local/bin/run.sh
           volumeMounts:
             - name: local-data
               readOnly: true
