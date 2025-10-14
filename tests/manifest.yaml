@@ -12,7 +12,7 @@ spec:
       restartPolicy: Never
       terminationGracePeriodSeconds: 1
       containers:
-        - name: main
+        - name: main1
           image: debian:trixie-slim
           command:
             - bash
@@ -21,16 +21,56 @@ spec:
               set -ex
               ln -s "{{ .ContainerPath }}/{{ .Binary }}" /usr/local/bin/klock
               readonly name="{{ .Name }}"
-              klock -l "$name" -i "${name}-id" -- echo "[incluster.echo] OK"
+              klock -l "$name" -i "${name}-1" -- /usr/local/bin/run.sh
           volumeMounts:
             - name: local-data
               readOnly: true
               mountPath: "{{ .ContainerPath }}"
+            - name: script-data
+              readOnly: true
+              mountPath: "/usr/local/bin/run.sh"
+              subPath: "run.sh"
+        - name: main2
+          image: debian:trixie-slim
+          command:
+            - bash
+            - -c
+            - |
+              set -ex
+              ln -s "{{ .ContainerPath }}/{{ .Binary }}" /usr/local/bin/klock
+              readonly name="{{ .Name }}"
+              klock -l "$name" -i "${name}-2" -- /usr/local/bin/run.sh
+          volumeMounts:
+            - name: local-data
+              readOnly: true
+              mountPath: "{{ .ContainerPath }}"
+            - name: script-data
+              readOnly: true
+              mountPath: "/usr/local/bin/run.sh"
+              subPath: "run.sh"
       volumes:
         - name: local-data
           hostPath:
             path: "{{ .LocalPath }}"
             type: DirectoryOrCreate
+        - name: script-data
+          configMap:
+            name: "{{ .Name }}"
+            defaultMode: 0755
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ .Name }}"
+  namespace: "{{ .Namespace }}"
+immutable: true
+data:
+  run.sh: |
+    #!/bin/bash
+    set -e
+    echo "[incluster.echo] Start"
+    sleep 5
+    echo "[incluster.echo] End"
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -40,7 +80,7 @@ metadata:
 rules:
   - apiGroups: ["coordination.k8s.io"]
     resources: ["leases"]
-    verbs: ["create", "get", "patch"]
+    verbs: ["create", "get", "update", "patch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding

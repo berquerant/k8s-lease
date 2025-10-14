@@ -69,7 +69,5 @@ func TestInCluster(t *testing.T) {
 		return
 	}
 	assert.Nil(t, newKubectl("wait", "--for=condition=complete", "job/"+name, "--timeout=60s").run().err)
-	r := newKubectl("logs", "job/"+name).run()
-	assert.Nil(t, r.err)
-	t.Log(r.stdout, r.stderr)
+	assert.Nil(t, newKubectl("logs", "job/"+name).run().err)
 }
