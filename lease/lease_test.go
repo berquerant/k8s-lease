@@ -90,43 +90,6 @@ var _ = Describe("Locker", func() {
 		})
 
 		for _, tc := range []struct {
-			title          string
-			name           string
-			sleepDuration  time.Duration
-			cancelDuration time.Duration
-			shouldCanceled bool
-		}{
-			{
-				title:          "should call cleanup function",
-				name:           "onetime-call-cleanup",
-				sleepDuration:  time.Millisecond * 300,
-				cancelDuration: time.Second,
-				shouldCanceled: false,
-			},
-			{
-				title:          "should call cleanup function even if canceled",
-				name:           "onetime-call-cleanup-canceled",
-				sleepDuration:  time.Millisecond * 500,
-				cancelDuration: time.Millisecond * 200,
-				shouldCanceled: true,
-			},
-		} {
-			It(tc.title, func() {
-				s := newSleeper(tc.name, tc.sleepDuration)
-				u := newSleeper(tc.name+"-cleanup-function", time.Millisecond*100)
-				locker, err := lease.NewLocker(namespace, tc.name, tc.name+"-id", clientIface)
-				Expect(err).To(Succeed())
-				ctx, cancel := context.WithTimeout(context.TODO(), tc.cancelDuration)
-				defer cancel()
-				Expect(locker.LockAndRun(ctx, s.sleep, lease.WithCleanup(func() { u.sleep(context.TODO()) }))).To(Succeed())
-				Expect(s.called).To(BeTrue())
-				Expect(s.canceled).To(Equal(tc.shouldCanceled))
-				Expect(u.called).To(BeTrue())
-				Expect(u.canceled).To(BeFalse())
-			})
-		}
-
-		for _, tc := range []struct {
 			title   string
 			name    string
 			cleanup bool

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"sync/atomic"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,7 +20,7 @@ var (
 	ErrElectTimedOut = errors.New("ElectTimedOut")
 )
 
-//go:generate go tool goconfig -field "Labels labels.Set|CleanupLease bool|Cleanup func()|LeaderElectTimeout time.Duration" -option -output config_generated.go
+//go:generate go tool goconfig -field "Labels labels.Set|CleanupLease bool|LeaderElectTimeout time.Duration" -option -output config_generated.go
 
 // NewLocker creates the new Locker instance.
 //
@@ -108,19 +107,16 @@ func (s *Locker) Labels() labels.Set {
 //   - try to acquire leadership
 //   - abort if the leader election timed out
 //   - invoke `f` when leadership is acquired
-//   - perform cleanup if `f` was invoked and the process is aborted or cancelled and leadership is lost
 //   - delete the lease if needed
 //
 // Available options:
 //
-//   - WithCleanup: the function for the cleanup
 //   - WithLeaderElectTimeout: the timeout of the leader election (default: unlimited(0))
 func (s *Locker) LockAndRun(ctx context.Context, f func(context.Context) error, opt ...ConfigOption) error {
 	if f == nil {
 		return fmt.Errorf("%w: f is nil", ErrInvalidLocker)
 	}
 	config := NewConfigBuilder().
-		Cleanup(nil).
 		LeaderElectTimeout(0).
 		Build()
 	for _, f := range opt {
@@ -174,11 +170,9 @@ func (s *Locker) LockAndRun(ctx context.Context, f func(context.Context) error, 
 			Labels: s.Labels(),
 		}
 
-		started               atomic.Bool
 		onStartedLeadingDoneC = make(chan error)
 		callbacks             = leaderelection.LeaderCallbacks{
 			OnStartedLeading: func(ctx context.Context) {
-				started.Store(true)
 				close(startedC) // notify started leading
 				logger.Debug("Become leader")
 				err := f(ctx)
@@ -187,12 +181,6 @@ func (s *Locker) LockAndRun(ctx context.Context, f func(context.Context) error, 
 			},
 			OnStoppedLeading: func() {
 				logger.Debug("Lost leader")
-				if started.Load() {
-					if g := config.Cleanup.Get(); g != nil {
-						logger.Debug("Cleanup")
-						g()
-					}
-				}
 			},
 			OnNewLeader: func(identity string) {
 				if s.id == identity {
