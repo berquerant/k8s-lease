@@ -24,6 +24,7 @@ test-e2e: $(BIN) $(TEST_BIN) setup-cluster
 
 .PHONY: test-unit
 test-unit: setup-cluster
+	go test $$(go list ./... | grep -v -E '/(lease|tests)')
 	go test ./lease/ -race -ginkgo.v
 
 .PHONY: setup-cluster

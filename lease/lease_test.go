@@ -2,6 +2,7 @@ package lease_test
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"sync"
 	"time"
@@ -16,12 +17,13 @@ import (
 type sleeper struct {
 	name       string
 	duration   time.Duration
+	err        error
 	called     bool
 	calledTime time.Time
 	canceled   bool
 }
 
-func (s *sleeper) sleep(ctx context.Context) {
+func (s *sleeper) sleep(ctx context.Context) error {
 	logger := slog.With(slog.String("name", s.name))
 	logger.Debug("Sleeper: Start", slog.String("duration", s.duration.String()))
 	s.called = true
@@ -32,6 +34,7 @@ func (s *sleeper) sleep(ctx context.Context) {
 	case <-time.After(s.duration):
 	}
 	logger.Debug("Sleeper: End")
+	return s.err
 }
 
 func newSleeper(name string, duration time.Duration) *sleeper {
@@ -62,6 +65,17 @@ var _ = Describe("Locker", func() {
 	})
 
 	Context("OneTime", func() {
+		It("should return internal error", func() {
+			const name = "onetime-internal-error"
+			s := newSleeper(name, time.Millisecond*300)
+			s.err = errors.New("internal error")
+			locker, err := lease.NewLocker(namespace, name, name+"-id", clientIface)
+			Expect(err).To(Succeed())
+			Expect(locker.LockAndRun(ctx, s.sleep)).To(MatchError(s.err))
+			Expect(s.called).To(BeTrue())
+			Expect(s.canceled).To(BeFalse())
+		})
+
 		It("should be cancellable", func() {
 			const name = "onetime-cancel"
 			s := newSleeper(name, time.Minute)

@@ -49,7 +49,7 @@ func NewLocker(
 		return nil, fmt.Errorf("%w: id is empty", ErrInvalidLocker)
 	}
 	if client == nil {
-		return nil, fmt.Errorf("%w: client is empty", ErrInvalidLocker)
+		return nil, fmt.Errorf("%w: client is nil", ErrInvalidLocker)
 	}
 	config := NewConfigBuilder().
 		Labels(nil).
@@ -115,7 +115,10 @@ func (s *Locker) Labels() labels.Set {
 //
 //   - WithCleanup: the function for the cleanup
 //   - WithLeaderElectTimeout: the timeout of the leader election (default: unlimited(0))
-func (s *Locker) LockAndRun(ctx context.Context, f func(context.Context), opt ...ConfigOption) error {
+func (s *Locker) LockAndRun(ctx context.Context, f func(context.Context) error, opt ...ConfigOption) error {
+	if f == nil {
+		return fmt.Errorf("%w: f is nil", ErrInvalidLocker)
+	}
 	config := NewConfigBuilder().
 		Cleanup(nil).
 		LeaderElectTimeout(0).
@@ -171,16 +174,16 @@ func (s *Locker) LockAndRun(ctx context.Context, f func(context.Context), opt ..
 			Labels: s.Labels(),
 		}
 
-		started   atomic.Bool
-		callbacks = leaderelection.LeaderCallbacks{
+		started               atomic.Bool
+		onStartedLeadingDoneC = make(chan error)
+		callbacks             = leaderelection.LeaderCallbacks{
 			OnStartedLeading: func(ctx context.Context) {
 				started.Store(true)
 				close(startedC) // notify started leading
 				logger.Debug("Become leader")
-				if f != nil {
-					f(ctx)
-					cancel()
-				}
+				err := f(ctx)
+				cancel()
+				onStartedLeadingDoneC <- err
 			},
 			OnStoppedLeading: func() {
 				logger.Debug("Lost leader")
@@ -215,6 +218,8 @@ func (s *Locker) LockAndRun(ctx context.Context, f func(context.Context), opt ..
 		errs = append(errs, ErrElectTimedOut)
 	case electCanceled:
 		errs = append(errs, ctx.Err())
+	case electSucceeded:
+		errs = append(errs, <-onStartedLeadingDoneC)
 	}
 	cancel()
 

@@ -98,9 +98,12 @@ func main() {
 		timeout          = fs.Duration("timeout", 0, "Same as --wait.")
 		conflictExitCode = fs.Uint8P("conflict-exit-code", "E", exitCodeFailure,
 			`The exit status used when the -w option is in use, and the timeout is reached.`)
-		debug            = fs.Bool("debug", false, "Enable debug logs.")
-		verbose          = fs.Bool("verbose", false, "Same as --debug.")
-		version          = fs.BoolP("version", "V", false, "Display version and exit.")
+		killAfter = fs.DurationP("kill-after", "k", 0,
+			"Also send a KILL signal if command is still running this long after the initial signal was sent.")
+		debug                      = fs.Bool("debug", false, "Enable debug logs.")
+		verbose                    = fs.Bool("verbose", false, "Same as --debug.")
+		version                    = fs.BoolP("version", "V", false, "Display version and exit.")
+		cancelSignal     os.Signal = syscall.SIGTERM
 		additionalLabels labels.Set
 	)
 	fs.Func("labels", "The additional labels of a lease", func(v string) error {
@@ -110,6 +113,14 @@ func main() {
 		}
 		additionalLabels = x
 		return nil
+	})
+	fs.FuncP("signal", "s", `Specify the signal to be sent on cancel; SIGNAL may be a name like 'HUP' or a number;
+default is TERM; see 'kill -l' for a list of signals`, func(v string) error {
+		if x, ok := process.NewSignal(v); ok {
+			cancelSignal = x
+			return nil
+		}
+		return errors.New("UnknownSignal")
 	})
 	err := fs.Parse(os.Args)
 	if errors.Is(err, pflag.ErrHelp) {
@@ -149,6 +160,8 @@ func main() {
 	proc.Stdin = os.Stdin
 	proc.Stdout = os.Stdout
 	proc.Stderr = os.Stderr
+	proc.WaitDelay = *killAfter
+	proc.CancelSignal = cancelSignal
 	ctx, stop := signal.NotifyContext(context.Background(),
 		os.Interrupt, syscall.SIGPIPE, syscall.SIGTERM)
 	err = proc.Run(ctx, lease.WithLeaderElectTimeout(max(*wait, *timeout)))

@@ -6,8 +6,11 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"os"
 	"os/exec"
 	"strings"
+	"syscall"
+	"time"
 
 	"al.essio.dev/pkg/shellescape"
 	"github.com/berquerant/k8s-lease/lease"
@@ -22,11 +25,13 @@ func NewProcess(locker *lease.Locker, name string, arg ...string) *Process {
 
 // Process is an external command executed under lock control.
 type Process struct {
-	locker *lease.Locker
-	Stdin  io.Reader
-	Stdout io.Writer
-	Stderr io.Writer
-	Args   []string
+	locker       *lease.Locker
+	Stdin        io.Reader
+	Stdout       io.Writer
+	Stderr       io.Writer
+	Args         []string
+	CancelSignal os.Signal
+	WaitDelay    time.Duration
 }
 
 var ErrInvalidProcess = errors.New("InvalidProcess")
@@ -68,6 +73,13 @@ func (p *Process) Run(ctx context.Context, opt ...lease.ConfigOption) error {
 			cmd.Stdin = p.Stdin
 			cmd.Stdout = p.Stdout
 			cmd.Stderr = p.Stderr
+			cmd.WaitDelay = p.WaitDelay
+			if s := p.CancelSignal; s != syscall.Signal(0) {
+				cmd.Cancel = func() error {
+					logger.Info("[Process] Cancel", slog.String("signal", fmt.Sprint(s)), slog.Duration("waitDelay", cmd.WaitDelay))
+					return cmd.Process.Signal(s)
+				}
+			}
 			logger.Info("[Process] Start", slog.String("command", strings.Join(cmd.Args, " ")))
 			err := cmd.Run()
 			logger.Info("[Process] End")
@@ -75,16 +87,8 @@ func (p *Process) Run(ctx context.Context, opt ...lease.ConfigOption) error {
 		}
 	)
 
-	var (
-		cmdErr  error
-		lockErr error
-	)
-	if lockErr = p.locker.LockAndRun(ctx, func(ctx context.Context) {
-		cmdErr = run(ctx)
-	}, opt...); lockErr != nil {
-		logger.Error("[Process] LockAndRun", slog.String("error", lockErr.Error()))
-	}
-	if err := errors.Join(cmdErr, lockErr); err != nil {
+	if err := p.locker.LockAndRun(ctx, run, opt...); err != nil {
+		logger.Error("[Process] LockAndRun", slog.String("error", err.Error()))
 		return fmt.Errorf("%w: locker=%s", err, p.locker)
 	}
 	return nil

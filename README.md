@@ -54,10 +54,13 @@ The exit status of the given command, if klock executed it.
   -E, --conflict-exit-code uint8   The exit status used when the -w option is in use, and the timeout is reached. (default 1)
       --debug                      Enable debug logs.
   -i, --identity string            The id of a lease holder. (default "klock")
+  -k, --kill-after duration        Also send a KILL signal if command is still running this long after the initial signal was sent.
       --kubeconfig string
       --labels value               The additional labels of a lease
   -l, --lease string               The name of a lease. (default "klock")
   -n, --namespace string           The namespace of a lease. (default "default")
+  -s, --signal value               Specify the signal to be sent on cancel; SIGNAL may be a name like 'HUP' or a number;
+                                   default is TERM; see 'kill -l' for a list of signals
       --timeout duration           Same as --wait.
   -u, --unlock                     Same as --cleanup-lease.
       --verbose                    Same as --debug.

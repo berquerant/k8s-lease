@@ -2,11 +2,14 @@ package main_test
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
+	"syscall"
 	"testing"
+	"time"
 
 	"github.com/berquerant/k8s-lease/lease"
 	"github.com/stretchr/testify/assert"
@@ -23,24 +26,27 @@ const (
 )
 
 func newKlock(arg ...string) *runner {
-	return &runner{
-		program: klock,
-		args:    arg,
-	}
+	return newRunner(klock, arg...)
 }
 
 func newKubectl(arg ...string) *runner {
+	return newRunner(kubectl, arg...)
+}
+
+func newRunner(program string, arg ...string) *runner {
 	return &runner{
-		program: kubectl,
+		program: program,
 		args:    arg,
 	}
 }
 
 type runner struct {
-	program string
-	args    []string
-	stdin   string
-	dir     string
+	program     string
+	args        []string
+	stdin       string
+	dir         string
+	cancelDelay time.Duration
+	waitDelay   time.Duration
 }
 
 type result struct {
@@ -56,7 +62,13 @@ func (r *result) assertSuccess(t *testing.T) {
 }
 
 func (r *runner) run() *result {
-	cmd := exec.Command(r.program, r.args...)
+	cancelDelay := r.cancelDelay
+	if cancelDelay == 0 {
+		cancelDelay = time.Hour
+	}
+	ctx, cancel := context.WithTimeout(context.TODO(), cancelDelay)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, r.program, r.args...)
 	if x := r.dir; x != "" {
 		cmd.Dir = x
 	}
@@ -70,6 +82,10 @@ func (r *runner) run() *result {
 	)
 	cmd.Stdout = io.MultiWriter(os.Stdout, &stdout)
 	cmd.Stderr = io.MultiWriter(os.Stderr, &stderr)
+	cmd.Cancel = func() error {
+		return cmd.Process.Signal(syscall.SIGINT)
+	}
+	cmd.WaitDelay = r.waitDelay
 	err := cmd.Run()
 	return &result{
 		stdout:     stdout.String(),
