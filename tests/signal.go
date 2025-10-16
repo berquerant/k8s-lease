@@ -23,7 +23,7 @@ func main() {
 	)
 	flag.Parse()
 	slog.Info("[signal] Start")
-	signalC := make(chan os.Signal)
+	signalC := make(chan os.Signal, 1)
 	signal.Notify(signalC, syscall.SIGINT, syscall.SIGTERM)
 	if *waitSignal {
 		slog.Info("[signal] Wait signal")
