@@ -135,9 +135,9 @@ default is TERM; see 'kill -l' for a list of signals`, func(v string) error {
 	}
 	logging.Setup(os.Stderr, *debug || *verbose)
 
-	args := fs.Args()[1:]
-	if len(args) == 0 {
-		fail("no program to be executed!")
+	args, err := commandArgs(fs)
+	if err != nil {
+		fail(fmt.Errorf("%w: invalid program and arguments to be executed", err))
 	}
 
 	kubeconfig, err := kconfig.Build(*kubeconfigPath)
@@ -176,4 +176,24 @@ default is TERM; see 'kill -l' for a list of signals`, func(v string) error {
 		}
 		fail(err)
 	}
+}
+
+var (
+	errNoProgram         = errors.New("NoProgram")
+	errProgramBeforeDash = errors.New("ProgramBeforeDash")
+)
+
+func commandArgs(fs *pflag.FlagSet) ([]string, error) {
+	dashAt := fs.ArgsLenAtDash()
+	if dashAt < 0 {
+		return nil, errNoProgram
+	}
+	if dashAt != 1 {
+		return nil, errProgramBeforeDash
+	}
+	args := fs.Args()[dashAt:]
+	if len(args) == 0 {
+		return nil, errNoProgram
+	}
+	return args, nil
 }

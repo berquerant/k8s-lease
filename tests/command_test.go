@@ -21,6 +21,41 @@ func TestCommand(t *testing.T) {
 		_ = cleanupLeases()
 	}()
 
+	t.Run("invalid arguments", func(t *testing.T) {
+		for _, tc := range []struct {
+			title string
+			args  []string
+			want  string
+		}{
+			{
+				title: "no args",
+				args:  []string{},
+				want:  "NoProgram",
+			},
+			{
+				title: "no args after dash",
+				args:  []string{"--"},
+				want:  "NoProgram",
+			},
+			{
+				title: "no dash",
+				args:  []string{"some"},
+				want:  "NoProgram",
+			},
+			{
+				title: "program after dash but also before",
+				args:  []string{"some", "--", "arg"},
+				want:  "ProgramBeforeDash",
+			},
+		} {
+			t.Run(tc.title, func(t *testing.T) {
+				r := newKlock(tc.args...).run()
+				assert.Equal(t, 1, r.exitStatus)
+				assert.Contains(t, r.stderr, tc.want)
+			})
+		}
+	})
+
 	t.Run("serial", func(t *testing.T) {
 		for _, tc := range []struct {
 			title          string
