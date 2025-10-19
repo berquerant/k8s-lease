@@ -57,7 +57,7 @@ func TestSignal(t *testing.T) {
 	})
 
 	t.Run("exit", func(t *testing.T) {
-		const name = "exit"
+		const name = "signal-exit"
 		for i := range 3 {
 			x := strconv.Itoa(i)
 			t.Run("with "+x, func(t *testing.T) {
