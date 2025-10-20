@@ -1,4 +1,5 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/berquerant/k8s-lease)](https://goreportcard.com/report/github.com/berquerant/k8s-lease)
+[![Go Reference](https://pkg.go.dev/badge/github.com/berquerant/k8s-lease.svg)](https://pkg.go.dev/github.com/berquerant/k8s-lease)
 
 # k8s-lease
 
