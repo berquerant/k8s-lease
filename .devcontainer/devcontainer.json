@@ -1,0 +1,14 @@
+{
+  "name": "Go dev container",
+  "build": {
+    "dockerfile": "./Dockerfile",
+    "context": ".."
+  },
+  "runArgs": ["--env-file", ".github/.env"],
+  "containerEnv": {
+    "DEVCONTAINER": "true"
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  }
+}

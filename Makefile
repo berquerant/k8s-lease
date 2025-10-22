@@ -78,3 +78,10 @@ generate:
 .PHONY: clean-generated
 clean-generated:
 	find . -name "*_generated.go" -type f -delete
+
+#
+# etc
+#
+.PHONY: clean-tools
+clean-tools:
+	rm -f bin/kubectl bin/kind

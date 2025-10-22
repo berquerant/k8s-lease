@@ -4,7 +4,8 @@ set -e
 set -o pipefail
 
 readonly d="$(cd "$(dirname "$0")" || exit 1 ; pwd)"
-readonly dest="${d}/../bin/kubectl"
+readonly dest="${d}/../bin/kind"
+readonly version="v0.30.0"
 
 log() {
     echo >&2 "$(basename "$0"): $*"
@@ -22,8 +23,7 @@ install() {
             ;;
     esac
     ARCH="$(arch | sed -e 's/x86_64/amd64/' -e 's/aarch64/arm64/')"
-    version="$(curl -L -s "https://dl.k8s.io/release/stable.txt")"
-    url="https://dl.k8s.io/release/${version}/bin/${OS_NAME}/${ARCH}/kubectl"
+    url="https://kind.sigs.k8s.io/dl/${version}/kind-${OS_NAME}-${ARCH}"
     curl -L -s -o "$dest" "$url"
     chmod +x "$dest"
 }
