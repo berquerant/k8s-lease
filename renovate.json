@@ -1,0 +1,64 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "baseBranchPatterns": [
+    "main"
+  ],
+  "extends": [
+    "github>berquerant/renovate-config"
+  ],
+  "postUpdateOptions": [
+    "gomodTidy"
+  ],
+  "lockFileMaintenance": {
+    "enabled": true
+  },
+  "packageRules": [
+    {
+      "description": "Group go dependencies",
+      "groupName": "go({{updateType}})",
+      "addLabels": [
+        "go"
+      ],
+      "matchDatasources": [
+        "go"
+      ]
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Manage go dependencies in devcontainer",
+      "managerFilePatterns": [
+        "/^.devcontainer/Dockerfile$/"
+      ],
+      "matchStrings": [
+        "(?<depName>.*)@(?<currentValue>.*)"
+      ],
+      "datasourceTemplate": "go"
+    },
+    {
+      "customType": "regex",
+      "description": "Manage kind version",
+      "managerFilePatterns": [
+        "/^hack/kind$/"
+      ],
+      "matchStrings": [
+        "version=\"(?<currentValue>.*)\""
+      ],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "kubernetes-sigs/kind"
+    },
+    {
+      "customType": "regex",
+      "description": "Manage kind node image version",
+      "managerFilePatterns": [
+        "/^.github/.env$/"
+      ],
+      "matchStrings": [
+        "KIND_NODE_IMAGE=(?<depName>.*?):(?<currentValue>.*?)"
+      ],
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "docker"
+    }
+  ]
+}
