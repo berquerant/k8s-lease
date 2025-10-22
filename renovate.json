@@ -32,7 +32,7 @@
         "/^.devcontainer/Dockerfile$/"
       ],
       "matchStrings": [
-        "(?<depName>.*)@(?<currentValue>.*)"
+        "RUN go install (?<depName>.*)@(?<currentValue>.*)"
       ],
       "datasourceTemplate": "go"
     },
