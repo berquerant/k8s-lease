@@ -2,15 +2,11 @@ package lease_test
 
 import (
 	"context"
-	"log/slog"
-	"os"
 	"testing"
 	"time"
 
 	"github.com/berquerant/k8s-lease/kconfig"
 	"github.com/berquerant/k8s-lease/lease"
-	"github.com/berquerant/k8s-lease/logging"
-	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	coordinationv1 "k8s.io/api/coordination/v1"
@@ -18,6 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	clientset "k8s.io/client-go/kubernetes"
 	coordinationv1client "k8s.io/client-go/kubernetes/typed/coordination/v1"
+	"k8s.io/klog/v2"
 	"k8s.io/utils/ptr"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -74,8 +71,7 @@ const (
 var _ = BeforeSuite(func() {
 	ctx, cancel = context.WithCancel(context.TODO())
 	By("setup loggers")
-	logging.Setup(os.Stdout, os.Getenv("DEBUG") != "")
-	logf.SetLogger(logr.FromSlogHandler(slog.Default().Handler()))
+	logf.SetLogger(klog.TODO())
 	By("setup clients")
 	cfg, err := kconfig.Build("")
 	Expect(err).To(Succeed())

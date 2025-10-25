@@ -5,10 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log/slog"
 	"os"
 	"os/exec"
-	"strings"
 	"syscall"
 	"time"
 
@@ -66,7 +64,7 @@ func (p *Process) Run(ctx context.Context, opt ...lease.ConfigOption) error {
 	}
 
 	var (
-		logger = p.locker.Logger()
+		logger = p.locker.Logger(ctx)
 		args   = p.quotedArgs()
 		run    = func(ctx context.Context) error {
 			cmd := exec.CommandContext(ctx, args[0], args[1:]...)
@@ -76,19 +74,21 @@ func (p *Process) Run(ctx context.Context, opt ...lease.ConfigOption) error {
 			cmd.WaitDelay = p.WaitDelay
 			if s := p.CancelSignal; s != syscall.Signal(0) {
 				cmd.Cancel = func() error {
-					logger.Info("[Process] Cancel", slog.String("signal", fmt.Sprint(s)), slog.Duration("waitDelay", cmd.WaitDelay))
+					sigstr := SignalIntoString(s)
+					signum, _ := SignalIntoInt(s)
+					logger.V(0).Info("process cancel", "signal", sigstr, "signum", signum, "waitDelay", cmd.WaitDelay)
 					return cmd.Process.Signal(s)
 				}
 			}
-			logger.Info("[Process] Start", slog.String("command", strings.Join(cmd.Args, " ")))
+			logger.V(0).Info("process start", "command", cmd.Args)
 			err := cmd.Run()
-			logger.Info("[Process] End")
+			logger.V(0).Info("process end")
 			return err
 		}
 	)
 
 	if err := p.locker.LockAndRun(ctx, run, opt...); err != nil {
-		logger.Error("[Process] LockAndRun", slog.String("error", err.Error()))
+		logger.Error(err, "process LockAndRun")
 		return fmt.Errorf("%w: locker=%s", err, p.locker)
 	}
 	return nil

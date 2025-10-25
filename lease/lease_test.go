@@ -3,7 +3,6 @@ package lease_test
 import (
 	"context"
 	"errors"
-	"log/slog"
 	"sync"
 	"time"
 
@@ -12,6 +11,7 @@ import (
 	. "github.com/onsi/gomega"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	k8slabels "k8s.io/apimachinery/pkg/labels"
+	"k8s.io/klog/v2"
 )
 
 type sleeper struct {
@@ -24,8 +24,8 @@ type sleeper struct {
 }
 
 func (s *sleeper) sleep(ctx context.Context) error {
-	logger := slog.With(slog.String("name", s.name))
-	logger.Debug("Sleeper: Start", slog.String("duration", s.duration.String()))
+	logger := klog.TODO().WithName("sleeper").WithValues("name", s.name)
+	logger.V(0).Info("start", "duration", s.duration)
 	s.called = true
 	s.calledTime = time.Now()
 	select {
@@ -33,7 +33,7 @@ func (s *sleeper) sleep(ctx context.Context) error {
 		s.canceled = true
 	case <-time.After(s.duration):
 	}
-	logger.Debug("Sleeper: End")
+	logger.V(0).Info("end")
 	return s.err
 }
 

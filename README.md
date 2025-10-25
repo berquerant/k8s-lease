@@ -51,23 +51,34 @@ The exit status of the given command, if klock executed it.
 
 # Flags
 
-      --cleanup-lease              If true, delete the created lease after processing.
-  -E, --conflict-exit-code uint8   The exit status used when the -w option is in use, and the timeout is reached. (default 1)
-      --debug                      Enable debug logs.
-  -i, --identity string            The id of a lease holder. (default "klock")
-  -k, --kill-after duration        Also send a KILL signal if command is still running this long after the initial signal was sent.
+      --add_dir_header                   If true, adds the file directory to the header of the log messages
+      --alsologtostderr                  log to standard error as well as files (no effect when -logtostderr=true)
+      --cleanup-lease                    If true, delete the created lease after processing.
+  -E, --conflict-exit-code uint8         The exit status used when the -w option is in use, and the timeout is reached. (default 1)
+  -i, --identity string                  The id of a lease holder. (default "klock")
+  -k, --kill-after duration              Also send a KILL signal if command is still running this long after the initial signal was sent.
       --kubeconfig string
-      --labels value               The additional labels of a lease
-  -l, --lease string               The name of a lease. (default "klock")
-  -n, --namespace string           The namespace of a lease. (default "default")
-  -s, --signal value               Specify the signal to be sent on cancel; SIGNAL may be a name like 'HUP' or a number;
-                                   default is TERM; see 'kill -l' for a list of signals
-      --timeout duration           Same as --wait.
-  -u, --unlock                     Same as --cleanup-lease.
-      --verbose                    Same as --debug.
-  -V, --version                    Display version and exit.
-  -w, --wait duration              Fail if the lock cannot be acquired within the duration.
-                                   0 means wait infinitely.
+      --labels value                     The additional labels of a lease
+  -l, --lease string                     The name of a lease. (default "klock")
+      --log_backtrace_at traceLocation   when logging hits line file:N, emit a stack trace (default :0)
+      --log_dir string                   If non-empty, write log files in this directory (no effect when -logtostderr=true)
+      --log_file string                  If non-empty, use this log file (no effect when -logtostderr=true)
+      --log_file_max_size uint           Defines the maximum size a log file can grow to (no effect when -logtostderr=true). Unit is megabytes. If the value is 0, the maximum file size is unlimited. (default 1800)
+      --logtostderr                      log to standard error instead of files (default true)
+  -n, --namespace string                 The namespace of a lease. (default "default")
+      --one_output                       If true, only write logs to their native severity level (vs also writing to each lower severity level; no effect when -logtostderr=true)
+  -s, --signal value                     Specify the signal to be sent on cancel; SIGNAL may be a name like 'HUP' or a number;
+                                         default is TERM; see 'kill -l' for a list of signals
+      --skip_headers                     If true, avoid header prefixes in the log messages
+      --skip_log_headers                 If true, avoid headers when opening log files (no effect when -logtostderr=true)
+      --stderrthreshold severity         logs at or above this threshold go to stderr when writing to files and stderr (no effect when -logtostderr=true or -alsologtostderr=true) (default 2)
+      --timeout duration                 Same as --wait.
+  -u, --unlock                           Same as --cleanup-lease.
+  -v, --v Level                          number for the log level verbosity
+  -V, --version                          Display version and exit.
+      --vmodule moduleSpec               comma-separated list of pattern=N settings for file-filtered logging
+  -w, --wait duration                    Fail if the lock cannot be acquired within the duration.
+                                         0 means wait infinitely.
 ```
 
 ## Development

@@ -4,14 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"time"
 
+	"github.com/berquerant/k8s-lease/logging"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	coordinationv1client "k8s.io/client-go/kubernetes/typed/coordination/v1"
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
+	"k8s.io/klog/v2"
 	"k8s.io/utils/ptr"
 )
 
@@ -85,11 +86,11 @@ func (s *Locker) String() string {
 	return fmt.Sprintf("namespace=%s name=%s id=%s", s.namespace, s.name, s.id)
 }
 
-func (s *Locker) Logger() *slog.Logger {
-	return slog.With(
-		slog.String("namespace", s.namespace),
-		slog.String("name", s.name),
-		slog.String("id", s.id),
+func (s *Locker) Logger(ctx context.Context) klog.Logger {
+	return logging.FromContext(ctx).WithValues(
+		"namespace", s.namespace,
+		"name", s.name,
+		"id", s.id,
 	)
 }
 
@@ -124,7 +125,7 @@ func (s *Locker) LockAndRun(ctx context.Context, f func(context.Context) error, 
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
-	logger := s.Logger()
+	logger := s.Logger(ctx)
 
 	//
 	// For LeaderElectTimeout
@@ -140,7 +141,7 @@ func (s *Locker) LockAndRun(ctx context.Context, f func(context.Context) error, 
 	go func() {
 		defer close(electResultC)
 		timeout := config.LeaderElectTimeout.Get()
-		logger.Debug("Waiting the leader election", slog.String("timeout", timeout.String()))
+		logger.V(1).Info("waiting the leader election", "timeout", timeout)
 		if timeout == 0 {
 			timeout = time.Hour * 24 * 365 * 100 // 100 years
 		}
@@ -148,11 +149,11 @@ func (s *Locker) LockAndRun(ctx context.Context, f func(context.Context) error, 
 		case <-ctx.Done():
 			electResultC <- electCanceled
 		case <-time.After(timeout):
-			logger.Info("Aborting the process because the leader election timed out")
+			logger.V(0).Info("aborting the process because the leader election timed out")
 			cancel()
 			electResultC <- electTimedOut
 		case <-startedC:
-			logger.Info("Starting the process because the leader election succeeded")
+			logger.V(0).Info("starting the process because the leader election succeeded")
 			electResultC <- electSucceeded
 		}
 	}()
@@ -174,19 +175,19 @@ func (s *Locker) LockAndRun(ctx context.Context, f func(context.Context) error, 
 		callbacks             = leaderelection.LeaderCallbacks{
 			OnStartedLeading: func(ctx context.Context) {
 				close(startedC) // notify started leading
-				logger.Debug("Become leader")
+				logger.V(1).Info("become leader")
 				err := f(ctx)
 				cancel()
 				onStartedLeadingDoneC <- err
 			},
 			OnStoppedLeading: func() {
-				logger.Debug("Lost leader")
+				logger.V(1).Info("lost leader")
 			},
 			OnNewLeader: func(identity string) {
 				if s.id == identity {
 					return
 				}
-				logger.Debug("Leader elected", slog.String("id", identity))
+				logger.V(1).Info("leader elected", "id", identity)
 			},
 		}
 		electionConfig = leaderelection.LeaderElectionConfig{
@@ -212,7 +213,7 @@ func (s *Locker) LockAndRun(ctx context.Context, f func(context.Context) error, 
 	cancel()
 
 	if s.needCleanup {
-		logger.Debug("Cleanup lease")
+		logger.V(1).Info("cleanup lease")
 		if err := s.cleanup(); err != nil {
 			errs = append(errs, fmt.Errorf("%w: failed to cleanup lease: %s", err, s))
 		}

@@ -26,7 +26,8 @@ const (
 )
 
 func newKlock(arg ...string) *runner {
-	return newRunner(klock, arg...)
+	args := append([]string{"-v=2"}, arg...)
+	return newRunner(klock, args...)
 }
 
 func newKubectl(arg ...string) *runner {

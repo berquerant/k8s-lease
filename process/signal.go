@@ -1,6 +1,7 @@
 package process
 
 import (
+	"os"
 	"strconv"
 	"syscall"
 
@@ -38,4 +39,18 @@ func NewSignal[T string | int](x T) (syscall.Signal, bool) {
 	default:
 		panic("unreachable")
 	}
+}
+
+func SignalIntoInt(s os.Signal) (int, bool) {
+	if v, ok := s.(syscall.Signal); ok {
+		return int(v), true
+	}
+	return 0, false
+}
+
+func SignalIntoString(s os.Signal) string {
+	if v, ok := s.(syscall.Signal); ok {
+		return unix.SignalName(v)
+	}
+	return s.String()
 }

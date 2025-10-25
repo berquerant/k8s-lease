@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"errors"
+	"flag"
 	"fmt"
-	"log/slog"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -18,17 +18,19 @@ import (
 	"github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/labels"
 	clientset "k8s.io/client-go/kubernetes"
+	"k8s.io/klog/v2"
 )
 
 const exitCodeFailure = 1
 
-func fail(msg any) {
-	failWith(exitCodeFailure, msg)
+func fail(ctx context.Context, err error) {
+	failWith(ctx, exitCodeFailure, err)
 }
 
-func failWith(exitCode int, msg any) {
-	slog.Error(fmt.Sprint(msg))
-	os.Exit(exitCode)
+func failWith(ctx context.Context, exitCode int, err error) {
+	logger := logging.FromContext(ctx)
+	logger.Error(err, "failed!")
+	klog.FlushAndExit(klog.ExitFlushTimeout, exitCode)
 }
 
 const usage = `klock -- manage locks from shell scripts within Kubernetes
@@ -85,6 +87,11 @@ func main() {
 		fmt.Printf(usage, lease.LabelsIntoString(lease.CommonLabels()), exitCodeFailure)
 		fs.PrintDefaults()
 	}
+	{
+		klogFlags := flag.NewFlagSet("klog", flag.ExitOnError)
+		klog.InitFlags(klogFlags)
+		fs.AddGoFlagSet(klogFlags)
+	}
 	var (
 		kubeconfigPath = fs.String("kubeconfig", "", "")
 		namespace      = fs.StringP("namespace", "n", "default", "The namespace of a lease.")
@@ -100,8 +107,6 @@ func main() {
 			`The exit status used when the -w option is in use, and the timeout is reached.`)
 		killAfter = fs.DurationP("kill-after", "k", 0,
 			"Also send a KILL signal if command is still running this long after the initial signal was sent.")
-		debug                      = fs.Bool("debug", false, "Enable debug logs.")
-		verbose                    = fs.Bool("verbose", false, "Same as --debug.")
 		version                    = fs.BoolP("version", "V", false, "Display version and exit.")
 		cancelSignal     os.Signal = syscall.SIGTERM
 		additionalLabels labels.Set
@@ -126,27 +131,29 @@ default is TERM; see 'kill -l' for a list of signals`, func(v string) error {
 	if errors.Is(err, pflag.ErrHelp) {
 		return
 	}
+
+	ctx := klog.NewContext(context.Background(), klog.NewKlogr().WithName("klock"))
+
 	if err != nil {
-		fail(fmt.Errorf("%w: failed to parse flags", err))
+		fail(ctx, fmt.Errorf("%w: failed to parse flags", err))
 	}
 	if *version {
 		versionpkg.Write(os.Stdout)
 		return
 	}
-	logging.Setup(os.Stderr, *debug || *verbose)
 
 	args, err := commandArgs(fs)
 	if err != nil {
-		fail(fmt.Errorf("%w: invalid program and arguments to be executed", err))
+		fail(ctx, fmt.Errorf("%w: invalid program and arguments to be executed", err))
 	}
 
 	kubeconfig, err := kconfig.Build(*kubeconfigPath)
 	if err != nil {
-		fail(fmt.Errorf("%w: failed to build kubeconfig", err))
+		fail(ctx, fmt.Errorf("%w: failed to build kubeconfig", err))
 	}
 	client, err := clientset.NewForConfig(kubeconfig)
 	if err != nil {
-		fail(fmt.Errorf("%w: failed to create client", err))
+		fail(ctx, fmt.Errorf("%w: failed to create client", err))
 	}
 	locker, err := lease.NewLocker(
 		*namespace, *name, *id, client.CoordinationV1(),
@@ -154,7 +161,7 @@ default is TERM; see 'kill -l' for a list of signals`, func(v string) error {
 		lease.WithLabels(additionalLabels),
 	)
 	if err != nil {
-		fail(fmt.Errorf("%w: failed to create locker", err))
+		fail(ctx, fmt.Errorf("%w: failed to create locker", err))
 	}
 	proc := process.NewProcess(locker, args[0], args[1:]...)
 	proc.Stdin = os.Stdin
@@ -162,19 +169,18 @@ default is TERM; see 'kill -l' for a list of signals`, func(v string) error {
 	proc.Stderr = os.Stderr
 	proc.WaitDelay = *killAfter
 	proc.CancelSignal = cancelSignal
-	ctx, stop := signal.NotifyContext(context.Background(),
-		os.Interrupt, syscall.SIGPIPE, syscall.SIGTERM)
+	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGPIPE, syscall.SIGTERM)
 	err = proc.Run(ctx, lease.WithLeaderElectTimeout(max(*wait, *timeout)))
 	stop()
 	if err != nil {
 		if errors.Is(err, lease.ErrElectTimedOut) {
-			failWith(int(*conflictExitCode), err)
+			failWith(ctx, int(*conflictExitCode), err)
 		}
 		var exitErr *exec.ExitError
 		if errors.As(err, &exitErr) {
-			failWith(exitErr.ExitCode(), err)
+			failWith(ctx, exitErr.ExitCode(), err)
 		}
-		fail(err)
+		fail(ctx, err)
 	}
 }
 

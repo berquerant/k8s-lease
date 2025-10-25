@@ -7,26 +7,28 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"k8s.io/klog/v2"
 )
 
 func main() {
-	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{})))
+	klog.InitFlags(nil)
 	var (
 		exit          = flag.Int("exit", 0, "")
 		waitSignal    = flag.Bool("wait-signal", false, "")
 		shutdownDelay = flag.Duration("delay", 0, "")
 	)
 	flag.Parse()
-	slog.Info("[signal] Start")
+	logger := klog.NewKlogr().WithName("signal")
+	logger.V(0).Info("start")
 	signalC := make(chan os.Signal, 1)
 	signal.Notify(signalC, syscall.SIGINT, syscall.SIGTERM)
 	if *waitSignal {
-		slog.Info("[signal] Wait signal")
+		logger.V(0).Info("wait signal")
 		switch <-signalC {
 		case syscall.SIGINT:
 			fmt.Println("SIGINT")
@@ -35,9 +37,9 @@ func main() {
 		}
 	}
 	if d := *shutdownDelay; d > 0 {
-		slog.Info("[signal] Wait for graceful shutdown", slog.Duration("duration", d))
+		logger.V(0).Info("wait for graceful shutdown", "duration", d)
 		time.Sleep(d)
-		slog.Info("[signal] Timed out")
+		logger.V(0).Info("timed out")
 	}
 	os.Exit(*exit)
 }
