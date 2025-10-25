@@ -31,5 +31,4 @@ install() {
 if [[ ! -x "$dest" ]] ; then
     install
 fi
-chmod +x "$dest"
 "$dest" "$@"
