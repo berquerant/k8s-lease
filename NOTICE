@@ -2167,8 +2167,8 @@ limitations under the License.
 ## golang.org/x/net
 
 * Name: golang.org/x/net
-* Version: v0.44.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/net/+/v0.44.0:LICENSE)
+* Version: v0.46.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/net/+/v0.46.0:LICENSE)
 
 ```
 Copyright 2009 The Go Authors.
@@ -2237,8 +2237,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## golang.org/x/sys/unix
 
 * Name: golang.org/x/sys/unix
-* Version: v0.37.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/sys/+/v0.37.0:LICENSE)
+* Version: v0.38.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/sys/+/v0.38.0:LICENSE)
 
 ```
 Copyright 2009 The Go Authors.
@@ -2272,8 +2272,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## golang.org/x/term
 
 * Name: golang.org/x/term
-* Version: v0.35.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/term/+/v0.35.0:LICENSE)
+* Version: v0.36.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/term/+/v0.36.0:LICENSE)
 
 ```
 Copyright 2009 The Go Authors.
@@ -2307,8 +2307,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## golang.org/x/text
 
 * Name: golang.org/x/text
-* Version: v0.29.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/text/+/v0.29.0:LICENSE)
+* Version: v0.30.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/text/+/v0.30.0:LICENSE)
 
 ```
 Copyright 2009 The Go Authors.
@@ -2377,8 +2377,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## google.golang.org/protobuf
 
 * Name: google.golang.org/protobuf
-* Version: v1.36.7
-* License: [BSD-3-Clause](https://github.com/protocolbuffers/protobuf-go/blob/v1.36.7/LICENSE)
+* Version: v1.36.8
+* License: [BSD-3-Clause](https://github.com/protocolbuffers/protobuf-go/blob/v1.36.8/LICENSE)
 
 ```
 Copyright (c) 2018 The Go Authors. All rights reserved.
