@@ -2539,8 +2539,8 @@ limitations under the License.
 ## k8s.io/api
 
 * Name: k8s.io/api
-* Version: v0.34.1
-* License: [Apache-2.0](https://github.com/kubernetes/api/blob/v0.34.1/LICENSE)
+* Version: v0.34.2
+* License: [Apache-2.0](https://github.com/kubernetes/api/blob/v0.34.2/LICENSE)
 
 ```
 
@@ -2994,8 +2994,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## k8s.io/client-go
 
 * Name: k8s.io/client-go
-* Version: v0.34.1
-* License: [Apache-2.0](https://github.com/kubernetes/client-go/blob/v0.34.1/LICENSE)
+* Version: v0.34.2
+* License: [Apache-2.0](https://github.com/kubernetes/client-go/blob/v0.34.2/LICENSE)
 
 ```
 
