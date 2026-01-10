@@ -5,7 +5,7 @@ set -o pipefail
 
 readonly d="$(cd "$(dirname "$0")" || exit 1 ; pwd)"
 readonly dest="${d}/../bin/kind"
-readonly version="v0.30.0"
+readonly version="v0.31.0"
 
 log() {
     echo >&2 "$(basename "$0"): $*"
