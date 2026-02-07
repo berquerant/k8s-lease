@@ -2093,8 +2093,8 @@ limitations under the License.
 ## golang.org/x/net
 
 * Name: golang.org/x/net
-* Version: v0.48.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/net/+/v0.48.0:LICENSE)
+* Version: v0.49.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/net/+/v0.49.0:LICENSE)
 
 ```
 Copyright 2009 The Go Authors.
@@ -2198,8 +2198,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## golang.org/x/term
 
 * Name: golang.org/x/term
-* Version: v0.38.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/term/+/v0.38.0:LICENSE)
+* Version: v0.39.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/term/+/v0.39.0:LICENSE)
 
 ```
 Copyright 2009 The Go Authors.
@@ -2233,8 +2233,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## golang.org/x/text
 
 * Name: golang.org/x/text
-* Version: v0.32.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/text/+/v0.32.0:LICENSE)
+* Version: v0.33.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/text/+/v0.33.0:LICENSE)
 
 ```
 Copyright 2009 The Go Authors.
@@ -4731,8 +4731,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## sigs.k8s.io/structured-merge-diff/v6
 
 * Name: sigs.k8s.io/structured-merge-diff/v6
-* Version: v6.3.0
-* License: [Apache-2.0](https://github.com/kubernetes-sigs/structured-merge-diff/blob/v6.3.0/LICENSE)
+* Version: v6.3.2-0.20260122202528-d9cc6641c482
+* License: [Apache-2.0](https://github.com/kubernetes-sigs/structured-merge-diff/blob/d9cc6641c482/LICENSE)
 
 ```
                                  Apache License
