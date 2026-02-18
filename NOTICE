@@ -2675,8 +2675,8 @@ limitations under the License.
 ## k8s.io/apimachinery/pkg
 
 * Name: k8s.io/apimachinery/pkg
-* Version: v0.35.0
-* License: [Apache-2.0](https://github.com/kubernetes/apimachinery/blob/v0.35.0/LICENSE)
+* Version: v0.35.1
+* License: [Apache-2.0](https://github.com/kubernetes/apimachinery/blob/v0.35.1/LICENSE)
 
 ```
 
@@ -2885,8 +2885,8 @@ limitations under the License.
 ## k8s.io/apimachinery/third_party/forked/golang
 
 * Name: k8s.io/apimachinery/third_party/forked/golang
-* Version: v0.35.0
-* License: [BSD-3-Clause](https://github.com/kubernetes/apimachinery/blob/v0.35.0/third_party/forked/golang/LICENSE)
+* Version: v0.35.1
+* License: [BSD-3-Clause](https://github.com/kubernetes/apimachinery/blob/v0.35.1/third_party/forked/golang/LICENSE)
 
 ```
 Copyright (c) 2009 The Go Authors. All rights reserved.
