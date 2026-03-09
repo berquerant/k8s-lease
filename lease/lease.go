@@ -233,7 +233,7 @@ func (s *Locker) cleanup() error {
 	return c.Delete(ctx, s.name, metav1.DeleteOptions{
 		PropagationPolicy: ptr.To(metav1.DeletePropagationBackground),
 		Preconditions: &metav1.Preconditions{
-			UID: ptr.To(x.GetUID()),
+			UID: new(x.GetUID()),
 		},
 	})
 }
