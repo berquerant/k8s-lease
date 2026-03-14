@@ -2163,8 +2163,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## golang.org/x/sys/unix
 
 * Name: golang.org/x/sys/unix
-* Version: v0.41.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/sys/+/v0.41.0:LICENSE)
+* Version: v0.42.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/sys/+/v0.42.0:LICENSE)
 
 ```
 Copyright 2009 The Go Authors.
@@ -3130,8 +3130,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## k8s.io/klog/v2
 
 * Name: k8s.io/klog/v2
-* Version: v2.130.1
-* License: [Apache-2.0](https://github.com/kubernetes/klog/blob/v2.130.1/LICENSE)
+* Version: v2.140.0
+* License: [Apache-2.0](https://github.com/kubernetes/klog/blob/v2.140.0/LICENSE)
 
 ```
 Apache License
