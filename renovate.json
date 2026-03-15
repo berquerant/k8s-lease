@@ -52,7 +52,7 @@
       "customType": "regex",
       "description": "Manage kind node image version",
       "managerFilePatterns": [
-        "/^.github/.env$/"
+        "/^.github/actions/setup-env/action.yaml$/"
       ],
       "matchStrings": [
         "KIND_NODE_IMAGE=(?<depName>.*?):(?<currentValue>.*?)"

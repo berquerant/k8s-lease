@@ -6,4 +6,6 @@ runs:
     - name: Import environment variables
       shell: bash
       run: |
-        cat ".github/.env" >> "$GITHUB_ENV"
+        cat <<EOS >> "$GITHUB_ENV"
+        KIND_NODE_IMAGE=kindest/node:v1.35.1
+        EOS

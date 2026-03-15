@@ -88,3 +88,7 @@ The exit status of the given command, if klock executed it.
 - [direnv](https://github.com/direnv/direnv)
 - go version v1.25.1+
 - docker version 28.5.1+
+
+``` shell
+make init
+```

@@ -1,7 +1,9 @@
-BIN = bin/klock
-CMD = "./cmd/klock"
-THIRD_PARTY_LICENSES = NOTICE
-TEST_BIN = bin/klock-incluster-test
+BIN := bin/klock
+CMD := "./cmd/klock"
+THIRD_PARTY_LICENSES := NOTICE
+TEST_BIN := bin/klock-incluster-test
+GITHUB_ENV := .env.github
+
 
 #
 # Build
@@ -71,6 +73,10 @@ check-licenses: check-licenses-diff
 $(THIRD_PARTY_LICENSES):
 	./hack/license.sh report > $@
 
+.PHONY: $(GITHUB_ENV)
+$(GITHUB_ENV): .github/actions/setup-env/action.yaml
+	yq '.runs.steps[0].run' $< | awk '/.+=.+/' > $@
+
 .PHONY: generate
 generate:
 	go generate ./...
@@ -79,9 +85,12 @@ generate:
 clean-generated:
 	find . -name "*_generated.go" -type f -delete
 
+
 #
 # etc
 #
 .PHONY: clean-tools
 clean-tools:
 	rm -f bin/kubectl bin/kind
+
+init: $(GITHUB_ENV)

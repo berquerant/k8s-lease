@@ -2,3 +2,4 @@ dist/
 bin/kubectl
 bin/klock*
 bin/kind
+.env.github
