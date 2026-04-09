@@ -1,6 +1,6 @@
 module github.com/berquerant/k8s-lease
 
-go 1.26.1
+go 1.26.2
 
 require (
 	al.essio.dev/pkg/shellescape v1.6.0
