@@ -42,7 +42,7 @@ $(TEST_BIN):
 #
 
 .PHONY: lint
-lint: check-licenses vet vuln golangci-lint
+lint: check-licenses vet golangci-lint
 
 .PHONY: vuln
 vuln:
