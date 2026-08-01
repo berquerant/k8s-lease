@@ -44,10 +44,6 @@ $(TEST_BIN):
 .PHONY: lint
 lint: check-licenses vet golangci-lint
 
-.PHONY: vuln
-vuln:
-	go tool govulncheck ./...
-
 .PHONY: vet
 vet:
 	go vet ./...
