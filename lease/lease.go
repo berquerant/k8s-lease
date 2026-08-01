@@ -21,7 +21,7 @@ var (
 	ErrElectTimedOut = errors.New("ElectTimedOut")
 )
 
-//go:generate go tool goconfig -field "Labels labels.Set|CleanupLease bool|LeaderElectTimeout time.Duration" -option -output config_generated.go
+//go:generate go tool goconfig -field "Labels labels.Set|CleanupLease bool|LeaderElectTimeout time.Duration|LeaseDuration time.Duration|RenewDeadline time.Duration|RetryPeriod time.Duration" -option -output config_generated.go
 
 // NewLocker creates the new Locker instance.
 //
@@ -113,12 +113,18 @@ func (s *Locker) Labels() labels.Set {
 // Available options:
 //
 //   - WithLeaderElectTimeout: the timeout of the leader election (default: unlimited(0))
+//   - WithLeaseDuration: the total time a leader node holds the lock before it expires (default: 15 seconds)
+//   - WithRenewDuration: the time limit for the leader to successfully renew its lock before stepping down (default: 10 seconds)
+//   - WithRetryPeriod: the time interval between each attempt to acquire or renew the lock (default: 2 seconds)
 func (s *Locker) LockAndRun(ctx context.Context, f func(context.Context) error, opt ...ConfigOption) error {
 	if f == nil {
 		return fmt.Errorf("%w: f is nil", ErrInvalidLocker)
 	}
 	config := NewConfigBuilder().
 		LeaderElectTimeout(0).
+		LeaseDuration(15 * time.Second).
+		RenewDeadline(10 * time.Second).
+		RetryPeriod(2 * time.Second).
 		Build()
 	for _, f := range opt {
 		f(config)
@@ -193,9 +199,9 @@ func (s *Locker) LockAndRun(ctx context.Context, f func(context.Context) error, 
 		electionConfig = leaderelection.LeaderElectionConfig{
 			Lock:            leaseLock,
 			ReleaseOnCancel: true,
-			LeaseDuration:   15 * time.Second, // Core clients default
-			RenewDeadline:   10 * time.Second, // Core clients default
-			RetryPeriod:     2 * time.Second,  // Core clients default
+			LeaseDuration:   config.LeaseDuration.Get(),
+			RenewDeadline:   config.RenewDeadline.Get(),
+			RetryPeriod:     config.RetryPeriod.Get(),
 			Callbacks:       callbacks,
 		}
 	)
