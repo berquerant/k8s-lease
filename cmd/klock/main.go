@@ -166,6 +166,7 @@ default is TERM; see 'kill -l' for a list of signals`, func(v string) error {
 		lease.WithLeaseDuration(*leaseDuration),
 		lease.WithRenewDeadline(*renewDeadline),
 		lease.WithRetryPeriod(*retryPeriod),
+		lease.WithLeaderElectTimeout(max(*wait, *timeout)),
 	)
 	if err != nil {
 		fail(ctx, fmt.Errorf("%w: failed to create locker", err))
@@ -177,7 +178,7 @@ default is TERM; see 'kill -l' for a list of signals`, func(v string) error {
 	proc.WaitDelay = *killAfter
 	proc.CancelSignal = cancelSignal
 	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGPIPE, syscall.SIGTERM)
-	err = proc.Run(ctx, lease.WithLeaderElectTimeout(max(*wait, *timeout)))
+	err = proc.Run(ctx)
 	stop()
 	if err != nil {
 		if errors.Is(err, lease.ErrElectTimedOut) {

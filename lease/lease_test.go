@@ -161,7 +161,7 @@ var _ = Describe("Locker", func() {
 				)
 				locker1, err := lease.NewLocker(namespace, tc.name, id1, clientIface)
 				Expect(err).To(Succeed())
-				locker2, err := lease.NewLocker(namespace, tc.name, id2, clientIface)
+				locker2, err := lease.NewLocker(namespace, tc.name, id2, clientIface, lease.WithLeaderElectTimeout(tc.electTimeout))
 				Expect(err).To(Succeed())
 
 				var (
@@ -177,7 +177,7 @@ var _ = Describe("Locker", func() {
 				time.Sleep(tc.launchDelay)
 				// T+launchDelay, launch locker2
 				go func() {
-					err2 = locker2.LockAndRun(ctx, s2.sleep, lease.WithLeaderElectTimeout(tc.electTimeout))
+					err2 = locker2.LockAndRun(ctx, s2.sleep)
 					wg.Done()
 				}()
 				// T+sleepDuration1, locker1 should be completed

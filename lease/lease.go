@@ -37,6 +37,7 @@ var (
 //   - WithLeaseDuration: the total time a leader node holds the lock before it expires (default: 15 seconds)
 //   - WithRenewDuration: the time limit for the leader to successfully renew its lock before stepping down (default: 10 seconds)
 //   - WithRetryPeriod: the time interval between each attempt to acquire or renew the lock (default: 2 seconds)
+//   - WithLeaderElectTimeout: the timeout of the leader election (default: unlimited(0))
 func NewLocker(
 	namespace, name, id string,
 	client coordinationv1client.LeasesGetter,
@@ -60,32 +61,34 @@ func NewLocker(
 		LeaseDuration(15 * time.Second).
 		RenewDeadline(10 * time.Second).
 		RetryPeriod(2 * time.Second).
+		LeaderElectTimeout(0).
 		Build()
 	for _, f := range opt {
 		f(config)
 	}
 	return &Locker{
-		namespace:     namespace,
-		name:          name,
-		id:            id,
-		client:        client,
-		labels:        config.Labels.Get(),
-		needCleanup:   config.CleanupLease.Get(),
-		leaseDuration: config.LeaseDuration.Get(),
-		renewDeadline: config.RenewDeadline.Get(),
-		retryPeriod:   config.RetryPeriod.Get(),
+		namespace:          namespace,
+		name:               name,
+		id:                 id,
+		client:             client,
+		labels:             config.Labels.Get(),
+		needCleanup:        config.CleanupLease.Get(),
+		leaseDuration:      config.LeaseDuration.Get(),
+		renewDeadline:      config.RenewDeadline.Get(),
+		retryPeriod:        config.RetryPeriod.Get(),
+		leaderElectTimeout: config.LeaderElectTimeout.Get(),
 	}, nil
 }
 
 // Locker runs the given function under lock control.
 type Locker struct {
-	namespace                                 string
-	name                                      string
-	id                                        string
-	client                                    coordinationv1client.LeasesGetter
-	labels                                    labels.Set
-	needCleanup                               bool
-	leaseDuration, renewDeadline, retryPeriod time.Duration
+	namespace                                                     string
+	name                                                          string
+	id                                                            string
+	client                                                        coordinationv1client.LeasesGetter
+	labels                                                        labels.Set
+	needCleanup                                                   bool
+	leaderElectTimeout, leaseDuration, renewDeadline, retryPeriod time.Duration
 }
 
 func (s *Locker) Namespace() string { return s.namespace }
@@ -119,19 +122,9 @@ func (s *Locker) Labels() labels.Set {
 //   - abort if the leader election timed out
 //   - invoke `f` when leadership is acquired
 //   - delete the lease if needed
-//
-// Available options:
-//
-//   - WithLeaderElectTimeout: the timeout of the leader election (default: unlimited(0))
-func (s *Locker) LockAndRun(ctx context.Context, f func(context.Context) error, opt ...ConfigOption) error {
+func (s *Locker) LockAndRun(ctx context.Context, f func(context.Context) error) error {
 	if f == nil {
 		return fmt.Errorf("%w: f is nil", ErrInvalidLocker)
-	}
-	config := NewConfigBuilder().
-		LeaderElectTimeout(0).
-		Build()
-	for _, f := range opt {
-		f(config)
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -150,7 +143,7 @@ func (s *Locker) LockAndRun(ctx context.Context, f func(context.Context) error, 
 	electResultC := make(chan electResultType)
 	go func() {
 		defer close(electResultC)
-		timeout := config.LeaderElectTimeout.Get()
+		timeout := s.leaderElectTimeout
 		logger.V(1).Info("waiting the leader election", "timeout", timeout)
 		if timeout == 0 {
 			timeout = time.Hour * 24 * 365 * 100 // 100 years
