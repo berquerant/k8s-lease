@@ -182,6 +182,7 @@ func (s *Locker) LockAndRun(ctx context.Context, f func(context.Context) error, 
 			},
 			OnStoppedLeading: func() {
 				logger.V(1).Info("lost leader")
+				cancel()
 			},
 			OnNewLeader: func(identity string) {
 				if s.id == identity {
