@@ -27,17 +27,6 @@
   "customManagers": [
     {
       "customType": "regex",
-      "description": "Manage go dependencies in devcontainer",
-      "managerFilePatterns": [
-        "/^.devcontainer/Dockerfile$/"
-      ],
-      "matchStrings": [
-        "RUN go install (?<depName>.*)@(?<currentValue>.*)"
-      ],
-      "datasourceTemplate": "go"
-    },
-    {
-      "customType": "regex",
       "description": "Manage kind version",
       "managerFilePatterns": [
         "/^hack/kind$/"
