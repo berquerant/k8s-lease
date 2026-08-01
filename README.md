@@ -27,6 +27,10 @@ You can execute multiple instances of some_cmd exclusively using klock.
 
   klock -l some_cmd_lease -i "$(uuidgen)" -- some_cmd
 
+or
+
+  klock -l some_cmd_lease -g -- some_cmd
+
 A unique uuid is associated with the execution of some_cmd as the holder identity.
 
 # Permissions
