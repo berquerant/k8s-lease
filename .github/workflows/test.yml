@@ -69,3 +69,14 @@ jobs:
           node_image: '${{ env.KIND_NODE_IMAGE }}'
       - name: Test
         run: make test-e2e
+
+  govulncheck:
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: berquerant/govulncheck-action@7c7f559180aca72a1badcead05a3d5d81fc95c30 # v1.0.3
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
