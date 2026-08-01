@@ -56,9 +56,7 @@ func (p *Process) quotedArgs() []string {
 }
 
 // Run starts the specified command and waits for it to complete with the lease lock.
-//
-// Run supports the same options as lease.Locker.LockAndRun.
-func (p *Process) Run(ctx context.Context, opt ...lease.ConfigOption) error {
+func (p *Process) Run(ctx context.Context) error {
 	if err := p.Validate(); err != nil {
 		return err
 	}
@@ -87,7 +85,7 @@ func (p *Process) Run(ctx context.Context, opt ...lease.ConfigOption) error {
 		}
 	)
 
-	if err := p.locker.LockAndRun(ctx, run, opt...); err != nil {
+	if err := p.locker.LockAndRun(ctx, run); err != nil {
 		logger.Error(err, "process LockAndRun")
 		return fmt.Errorf("%w: locker=%s", err, p.locker)
 	}
