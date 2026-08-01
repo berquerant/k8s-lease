@@ -76,7 +76,7 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     steps:
-      - uses: berquerant/govulncheck-action@ef78bc119aba213f5633acb1e6a044f4de695697 # v1.0.2
+      - uses: berquerant/govulncheck-action@7c7f559180aca72a1badcead05a3d5d81fc95c30 # v1.0.3
         with:
           go-version-file: go.mod
           cache-dependency-path: go.sum
