@@ -7,5 +7,5 @@ runs:
       shell: bash
       run: |
         cat <<EOS >> "$GITHUB_ENV"
-        KIND_NODE_IMAGE=kindest/node:v1.35.1
+        KIND_NODE_IMAGE=kindest/node:v1.36.1
         EOS
