@@ -16,6 +16,7 @@ import (
 	"github.com/berquerant/k8s-lease/logging"
 	"github.com/berquerant/k8s-lease/process"
 	versionpkg "github.com/berquerant/k8s-lease/version"
+	"github.com/google/uuid"
 	"github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/labels"
 	clientset "k8s.io/client-go/kubernetes"
@@ -98,6 +99,7 @@ func main() {
 		namespace      = fs.StringP("namespace", "n", "default", "The namespace of a lease.")
 		name           = fs.StringP("lease", "l", "klock", "The name of a lease.")
 		id             = fs.StringP("identity", "i", "klock", "The id of a lease holder.")
+		generateID     = fs.BoolP("generate-identity", "g", false, "If true, generate a holder identity by uuid.")
 		cleanupLease   = fs.Bool("cleanup-lease", false, "If true, delete the created lease after processing.")
 		unlock         = fs.BoolP("unlock", "u", false, "Same as --cleanup-lease.")
 		wait           = fs.DurationP("wait", "w", 0,
@@ -160,7 +162,7 @@ default is TERM; see 'kill -l' for a list of signals`, func(v string) error {
 		fail(ctx, fmt.Errorf("%w: failed to create client", err))
 	}
 	locker, err := lease.NewLocker(
-		*namespace, *name, *id, client.CoordinationV1(),
+		*namespace, *name, holderIdentity(*id, *generateID), client.CoordinationV1(),
 		lease.WithCleanupLease(*cleanupLease || *unlock),
 		lease.WithLabels(additionalLabels),
 		lease.WithLeaseDuration(*leaseDuration),
@@ -210,4 +212,11 @@ func commandArgs(fs *pflag.FlagSet) ([]string, error) {
 		return nil, errNoProgram
 	}
 	return args, nil
+}
+
+func holderIdentity(id string, generate bool) string {
+	if generate {
+		return uuid.Must(uuid.NewRandom()).String()
+	}
+	return id
 }
