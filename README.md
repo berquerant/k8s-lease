@@ -56,6 +56,7 @@ The exit status of the given command, if klock executed it.
       --alsologtostderrthreshold severity   logs at or above this threshold go to stderr when -alsologtostderr=true (no effect when -logtostderr=true)
       --cleanup-lease                       If true, delete the created lease after processing.
   -E, --conflict-exit-code uint8            The exit status used when the -w option is in use, and the timeout is reached. (default 1)
+  -g, --generate-identity                   If true, generate a holder identity by uuid.
   -i, --identity string                     The id of a lease holder. (default "klock")
   -k, --kill-after duration                 Also send a KILL signal if command is still running this long after the initial signal was sent.
       --kubeconfig string                   
