@@ -9,7 +9,6 @@ import (
 	"os/exec"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/berquerant/k8s-lease/kconfig"
 	"github.com/berquerant/k8s-lease/lease"
@@ -110,9 +109,9 @@ func main() {
 			`The exit status used when the -w option is in use, and the timeout is reached.`)
 		killAfter = fs.DurationP("kill-after", "k", 0,
 			"Also send a KILL signal if command is still running this long after the initial signal was sent.")
-		leaseDuration              = fs.Duration("lease-duration", 15*time.Second, "The total time a leader node holds the lock before it expires.")
-		renewDeadline              = fs.Duration("renew-deadline", 10*time.Second, "The time limit for the leader to successfully renew its lock before stepping down.")
-		retryPeriod                = fs.Duration("retry-period", 2*time.Second, "The time interval between each attempt to acquire or renew the lock.")
+		leaseDuration              = fs.Duration("lease-duration", lease.DefaultLeaseDuration, "The total time a leader node holds the lock before it expires.")
+		renewDeadline              = fs.Duration("renew-deadline", lease.DefaultRenewDeadline, "The time limit for the leader to successfully renew its lock before stepping down.")
+		retryPeriod                = fs.Duration("retry-period", lease.DefaultRetryPeriod, "The time interval between each attempt to acquire or renew the lock.")
 		version                    = fs.BoolP("version", "V", false, "Display version and exit.")
 		cancelSignal     os.Signal = syscall.SIGTERM
 		additionalLabels labels.Set
@@ -144,7 +143,9 @@ default is TERM; see 'kill -l' for a list of signals`, func(v string) error {
 		fail(ctx, fmt.Errorf("%w: failed to parse flags", err))
 	}
 	if *version {
-		versionpkg.Write(os.Stdout)
+		if err := versionpkg.Write(os.Stdout); err != nil {
+			fail(ctx, err)
+		}
 		return
 	}
 

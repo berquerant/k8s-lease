@@ -10,7 +10,10 @@ var (
 	Revision = "unknown"
 )
 
-func Write(w io.Writer) {
-	_, _ = fmt.Fprintf(w, "Version: %s\n", Version)
-	_, _ = fmt.Fprintf(w, "Revision: %s\n", Revision)
+func Write(w io.Writer) error {
+	if _, err := fmt.Fprintf(w, "Version: %s\n", Version); err != nil {
+		return err
+	}
+	_, err := fmt.Fprintf(w, "Revision: %s\n", Revision)
+	return err
 }

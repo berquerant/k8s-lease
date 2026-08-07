@@ -34,7 +34,7 @@ type Process struct {
 
 var ErrInvalidProcess = errors.New("InvalidProcess")
 
-func (p *Process) Validate() error {
+func (p *Process) validate() error {
 	if p.locker == nil {
 		return fmt.Errorf("%w: locker is nil", ErrInvalidProcess)
 	}
@@ -57,7 +57,7 @@ func (p *Process) quotedArgs() []string {
 
 // Run starts the specified command and waits for it to complete with the lease lock.
 func (p *Process) Run(ctx context.Context) error {
-	if err := p.Validate(); err != nil {
+	if err := p.validate(); err != nil {
 		return err
 	}
 

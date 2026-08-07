@@ -7,5 +7,5 @@ import (
 )
 
 func FromContext(ctx context.Context) klog.Logger {
-	return klog.FromContext(ctx).WithValues("component", "k8s-lease-klock")
+	return klog.FromContext(ctx)
 }

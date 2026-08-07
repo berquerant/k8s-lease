@@ -21,6 +21,18 @@ var (
 	ErrElectTimedOut = errors.New("ElectTimedOut")
 )
 
+const (
+	// DefaultLeaseDuration is the total time a leader holds the lock before it expires.
+	DefaultLeaseDuration = 15 * time.Second
+	// DefaultRenewDeadline is the time limit for the leader to renew its lock.
+	DefaultRenewDeadline = 10 * time.Second
+	// DefaultRetryPeriod is the interval between lock acquisition/renewal attempts.
+	DefaultRetryPeriod = 2 * time.Second
+
+	// cleanupTimeout is the timeout for deleting the Lease resource after processing.
+	cleanupTimeout = 5 * time.Second
+)
+
 //go:generate go tool goconfig -field "Labels labels.Set|CleanupLease bool|LeaderElectTimeout time.Duration|LeaseDuration time.Duration|RenewDeadline time.Duration|RetryPeriod time.Duration" -option -output config_generated.go
 
 // NewLocker creates the new Locker instance.
@@ -58,9 +70,9 @@ func NewLocker(
 	config := NewConfigBuilder().
 		Labels(nil).
 		CleanupLease(false).
-		LeaseDuration(15 * time.Second).
-		RenewDeadline(10 * time.Second).
-		RetryPeriod(2 * time.Second).
+		LeaseDuration(DefaultLeaseDuration).
+		RenewDeadline(DefaultRenewDeadline).
+		RetryPeriod(DefaultRetryPeriod).
 		LeaderElectTimeout(0).
 		Build()
 	for _, f := range opt {
@@ -127,6 +139,7 @@ func (s *Locker) LockAndRun(ctx context.Context, f func(context.Context) error) 
 		return fmt.Errorf("%w: f is nil", ErrInvalidLocker)
 	}
 
+	parentCtx := ctx // keep a reference before WithCancel for use in cleanup
 	ctx, cancel := context.WithCancel(ctx)
 	logger := s.Logger(ctx)
 
@@ -225,16 +238,18 @@ func (s *Locker) LockAndRun(ctx context.Context, f func(context.Context) error) 
 
 	if s.needCleanup {
 		logger.V(1).Info("cleanup lease")
-		if err := s.cleanup(); err != nil {
+		if err := s.cleanup(parentCtx); err != nil {
 			errs = append(errs, fmt.Errorf("%w: failed to cleanup lease: %s", err, s))
 		}
 	}
 	return errors.Join(errs...)
 }
 
-// Delete the created lease.
-func (s *Locker) cleanup() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+// cleanup deletes the created lease.
+// parentCtx is the context passed to LockAndRun before internal cancellation;
+// it remains valid for external signals (e.g. SIGTERM) during cleanup.
+func (s *Locker) cleanup(parentCtx context.Context) error {
+	ctx, cancel := context.WithTimeout(parentCtx, cleanupTimeout)
 	defer cancel()
 	c := s.client.Leases(s.namespace)
 	x, err := c.Get(ctx, s.name, metav1.GetOptions{})
