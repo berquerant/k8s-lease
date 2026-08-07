@@ -179,9 +179,10 @@ default is TERM; see 'kill -l' for a list of signals`, func(v string) error {
 	proc.Stderr = os.Stderr
 	proc.WaitDelay = *killAfter
 	proc.CancelSignal = cancelSignal
-	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGPIPE, syscall.SIGTERM)
+	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
+	defer stop() // in case of panic
 	err = proc.Run(ctx)
-	stop()
+	stop() // release before os.Exit paths in error handling below
 	if err != nil {
 		if errors.Is(err, lease.ErrElectTimedOut) {
 			failWith(ctx, int(*conflictExitCode), err)

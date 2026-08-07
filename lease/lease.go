@@ -143,21 +143,28 @@ func (s *Locker) LockAndRun(ctx context.Context, f func(context.Context) error) 
 	electResultC := make(chan electResultType)
 	go func() {
 		defer close(electResultC)
-		timeout := s.leaderElectTimeout
-		logger.V(1).Info("waiting the leader election", "timeout", timeout)
-		if timeout == 0 {
-			timeout = time.Hour * 24 * 365 * 100 // 100 years
-		}
-		select {
-		case <-ctx.Done():
-			electResultC <- electCanceled
-		case <-time.After(timeout):
-			logger.V(0).Info("aborting the process because the leader election timed out")
-			cancel()
-			electResultC <- electTimedOut
-		case <-startedC:
-			logger.V(0).Info("starting the process because the leader election succeeded")
-			electResultC <- electSucceeded
+		logger.V(1).Info("waiting the leader election", "timeout", s.leaderElectTimeout)
+		if s.leaderElectTimeout == 0 {
+			// No timeout: wait indefinitely for ctx cancellation or leadership.
+			select {
+			case <-ctx.Done():
+				electResultC <- electCanceled
+			case <-startedC:
+				logger.V(0).Info("starting the process because the leader election succeeded")
+				electResultC <- electSucceeded
+			}
+		} else {
+			select {
+			case <-ctx.Done():
+				electResultC <- electCanceled
+			case <-time.After(s.leaderElectTimeout):
+				logger.V(0).Info("aborting the process because the leader election timed out")
+				cancel()
+				electResultC <- electTimedOut
+			case <-startedC:
+				logger.V(0).Info("starting the process because the leader election succeeded")
+				electResultC <- electSucceeded
+			}
 		}
 	}()
 
