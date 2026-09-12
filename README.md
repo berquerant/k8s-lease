@@ -95,7 +95,7 @@ The exit status of the given command, if klock executed it.
 ### Prerequisites
 
 - [direnv](https://github.com/direnv/direnv)
-- go version v1.25.1+
+- go version v1.27.1+
 - docker version 28.5.1+
 
 ``` shell
