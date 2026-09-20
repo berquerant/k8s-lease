@@ -9,13 +9,13 @@ import (
 	"os/exec"
 	"os/signal"
 	"syscall"
+	"uuid"
 
 	"github.com/berquerant/k8s-lease/kconfig"
 	"github.com/berquerant/k8s-lease/lease"
 	"github.com/berquerant/k8s-lease/logging"
 	"github.com/berquerant/k8s-lease/process"
 	versionpkg "github.com/berquerant/k8s-lease/version"
-	"github.com/google/uuid"
 	"github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/labels"
 	clientset "k8s.io/client-go/kubernetes"
@@ -218,7 +218,7 @@ func commandArgs(fs *pflag.FlagSet) ([]string, error) {
 
 func holderIdentity(id string, generate bool) string {
 	if generate {
-		return uuid.Must(uuid.NewRandom()).String()
+		return uuid.New().String()
 	}
 	return id
 }
