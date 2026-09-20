@@ -9,13 +9,14 @@ import (
 	"os/exec"
 	"os/signal"
 	"syscall"
+	"time"
+	"uuid"
 
 	"github.com/berquerant/k8s-lease/kconfig"
 	"github.com/berquerant/k8s-lease/lease"
 	"github.com/berquerant/k8s-lease/logging"
 	"github.com/berquerant/k8s-lease/process"
 	versionpkg "github.com/berquerant/k8s-lease/version"
-	"github.com/google/uuid"
 	"github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/labels"
 	clientset "k8s.io/client-go/kubernetes"
@@ -82,7 +83,27 @@ The exit status of the given command, if klock executed it.
 
 `
 
-func main() {
+type cliConfig struct {
+	kubeconfigPath   *string
+	namespace        *string
+	name             *string
+	id               *string
+	generateID       *bool
+	cleanupLease     *bool
+	unlock           *bool
+	wait             *time.Duration
+	timeout          *time.Duration
+	conflictExitCode *uint8
+	killAfter        *time.Duration
+	leaseDuration    *time.Duration
+	renewDeadline    *time.Duration
+	retryPeriod      *time.Duration
+	version          *bool
+	cancelSignal     *os.Signal
+	additionalLabels *labels.Set
+}
+
+func newFlagSet() (*pflag.FlagSet, *cliConfig) {
 	fs := pflag.NewFlagSet("main", pflag.ExitOnError)
 	fs.Usage = func() {
 		fmt.Printf(usage, lease.LabelsIntoString(lease.CommonLabels()), exitCodeFailure)
@@ -93,45 +114,98 @@ func main() {
 		klog.InitFlags(klogFlags)
 		fs.AddGoFlagSet(klogFlags)
 	}
-	var (
-		kubeconfigPath = fs.String("kubeconfig", "", "")
-		namespace      = fs.StringP("namespace", "n", "default", "The namespace of a lease.")
-		name           = fs.StringP("lease", "l", "klock", "The name of a lease.")
-		id             = fs.StringP("identity", "i", "klock", "The id of a lease holder.")
-		generateID     = fs.BoolP("generate-identity", "g", false, "If true, generate a holder identity by uuid.")
-		cleanupLease   = fs.Bool("cleanup-lease", false, "If true, delete the created lease after processing.")
-		unlock         = fs.BoolP("unlock", "u", false, "Same as --cleanup-lease.")
-		wait           = fs.DurationP("wait", "w", 0,
+	cfg := &cliConfig{
+		kubeconfigPath: fs.String("kubeconfig", "", ""),
+		namespace:      fs.StringP("namespace", "n", "default", "The namespace of a lease."),
+		name:           fs.StringP("lease", "l", "klock", "The name of a lease."),
+		id:             fs.StringP("identity", "i", "klock", "The id of a lease holder."),
+		generateID:     fs.BoolP("generate-identity", "g", false, "If true, generate a holder identity by uuid."),
+		cleanupLease:   fs.Bool("cleanup-lease", false, "If true, delete the created lease after processing."),
+		unlock:         fs.BoolP("unlock", "u", false, "Same as --cleanup-lease."),
+		wait: fs.DurationP("wait", "w", 0,
 			`Fail if the lock cannot be acquired within the duration.
-0 means wait infinitely.`)
-		timeout          = fs.Duration("timeout", 0, "Same as --wait.")
-		conflictExitCode = fs.Uint8P("conflict-exit-code", "E", exitCodeFailure,
-			`The exit status used when the -w option is in use, and the timeout is reached.`)
-		killAfter = fs.DurationP("kill-after", "k", 0,
-			"Also send a KILL signal if command is still running this long after the initial signal was sent.")
-		leaseDuration              = fs.Duration("lease-duration", lease.DefaultLeaseDuration, "The total time a leader node holds the lock before it expires.")
-		renewDeadline              = fs.Duration("renew-deadline", lease.DefaultRenewDeadline, "The time limit for the leader to successfully renew its lock before stepping down.")
-		retryPeriod                = fs.Duration("retry-period", lease.DefaultRetryPeriod, "The time interval between each attempt to acquire or renew the lock.")
-		version                    = fs.BoolP("version", "V", false, "Display version and exit.")
-		cancelSignal     os.Signal = syscall.SIGTERM
-		additionalLabels labels.Set
-	)
+0 means wait infinitely.`),
+		timeout: fs.Duration("timeout", 0, "Same as --wait."),
+		conflictExitCode: fs.Uint8P("conflict-exit-code", "E", exitCodeFailure,
+			`The exit status used when the -w option is in use, and the timeout is reached.`),
+		killAfter: fs.DurationP("kill-after", "k", 0,
+			"Also send a KILL signal if command is still running this long after the initial signal was sent."),
+		leaseDuration: fs.Duration("lease-duration", lease.DefaultLeaseDuration, "The total time a leader node holds the lock before it expires."),
+		renewDeadline: fs.Duration("renew-deadline", lease.DefaultRenewDeadline, "The time limit for the leader to successfully renew its lock before stepping down."),
+		retryPeriod:   fs.Duration("retry-period", lease.DefaultRetryPeriod, "The time interval between each attempt to acquire or renew the lock."),
+		version:       fs.BoolP("version", "V", false, "Display version and exit."),
+	}
+	var cancelSignal os.Signal = syscall.SIGTERM
+	cfg.cancelSignal = &cancelSignal
+	var additionalLabels labels.Set
+	cfg.additionalLabels = &additionalLabels
+
 	fs.Func("labels", "The additional labels of a lease", func(v string) error {
 		x, err := lease.ParseLabelsFromString(v)
 		if err != nil {
 			return err
 		}
-		additionalLabels = x
+		*cfg.additionalLabels = x
 		return nil
 	})
 	fs.FuncP("signal", "s", `Specify the signal to be sent on cancel; SIGNAL may be a name like 'HUP' or a number;
 default is TERM; see 'kill -l' for a list of signals`, func(v string) error {
 		if x, ok := process.NewSignal(v); ok {
-			cancelSignal = x
+			*cfg.cancelSignal = x
 			return nil
 		}
 		return errors.New("UnknownSignal")
 	})
+	return fs, cfg
+}
+
+func (c *cliConfig) buildLocker(ctx context.Context) (*lease.Locker, error) {
+	kubeconfig, err := kconfig.Build(*c.kubeconfigPath)
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to build kubeconfig", err)
+	}
+	client, err := clientset.NewForConfig(kubeconfig)
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to create client", err)
+	}
+	return lease.NewLocker(
+		*c.namespace, *c.name, holderIdentity(*c.id, *c.generateID), client.CoordinationV1(),
+		lease.WithCleanupLease(*c.cleanupLease || *c.unlock),
+		lease.WithLabels(*c.additionalLabels),
+		lease.WithLeaseDuration(*c.leaseDuration),
+		lease.WithRenewDeadline(*c.renewDeadline),
+		lease.WithRetryPeriod(*c.retryPeriod),
+		lease.WithLeaderElectTimeout(max(*c.wait, *c.timeout)),
+	)
+}
+
+func runProcess(ctx context.Context, locker *lease.Locker, cfg *cliConfig, args []string) error {
+	proc := process.NewProcess(locker, args[0], args[1:]...)
+	proc.Stdin = os.Stdin
+	proc.Stdout = os.Stdout
+	proc.Stderr = os.Stderr
+	proc.WaitDelay = *cfg.killAfter
+	proc.CancelSignal = *cfg.cancelSignal
+	pCtx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	err := proc.Run(pCtx)
+	stop()
+	return err
+}
+
+func handleRunError(ctx context.Context, err error, conflictExitCode int) {
+	if errors.Is(err, lease.ErrElectTimedOut) {
+		failWith(ctx, conflictExitCode, err)
+	}
+	var exitErr *exec.ExitError
+	if errors.As(err, &exitErr) {
+		failWith(ctx, exitErr.ExitCode(), err)
+	}
+	fail(ctx, err)
+}
+
+func main() {
+	fs, cfg := newFlagSet()
 	err := fs.Parse(os.Args)
 	if errors.Is(err, pflag.ErrHelp) {
 		return
@@ -142,7 +216,7 @@ default is TERM; see 'kill -l' for a list of signals`, func(v string) error {
 	if err != nil {
 		fail(ctx, fmt.Errorf("%w: failed to parse flags", err))
 	}
-	if *version {
+	if *cfg.version {
 		if err := versionpkg.Write(os.Stdout); err != nil {
 			fail(ctx, err)
 		}
@@ -154,45 +228,13 @@ default is TERM; see 'kill -l' for a list of signals`, func(v string) error {
 		fail(ctx, fmt.Errorf("%w: invalid program and arguments to be executed", err))
 	}
 
-	kubeconfig, err := kconfig.Build(*kubeconfigPath)
-	if err != nil {
-		fail(ctx, fmt.Errorf("%w: failed to build kubeconfig", err))
-	}
-	client, err := clientset.NewForConfig(kubeconfig)
-	if err != nil {
-		fail(ctx, fmt.Errorf("%w: failed to create client", err))
-	}
-	locker, err := lease.NewLocker(
-		*namespace, *name, holderIdentity(*id, *generateID), client.CoordinationV1(),
-		lease.WithCleanupLease(*cleanupLease || *unlock),
-		lease.WithLabels(additionalLabels),
-		lease.WithLeaseDuration(*leaseDuration),
-		lease.WithRenewDeadline(*renewDeadline),
-		lease.WithRetryPeriod(*retryPeriod),
-		lease.WithLeaderElectTimeout(max(*wait, *timeout)),
-	)
+	locker, err := cfg.buildLocker(ctx)
 	if err != nil {
 		fail(ctx, fmt.Errorf("%w: failed to create locker", err))
 	}
-	proc := process.NewProcess(locker, args[0], args[1:]...)
-	proc.Stdin = os.Stdin
-	proc.Stdout = os.Stdout
-	proc.Stderr = os.Stderr
-	proc.WaitDelay = *killAfter
-	proc.CancelSignal = cancelSignal
-	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
-	defer stop() // in case of panic
-	err = proc.Run(ctx)
-	stop() // release before os.Exit paths in error handling below
-	if err != nil {
-		if errors.Is(err, lease.ErrElectTimedOut) {
-			failWith(ctx, int(*conflictExitCode), err)
-		}
-		var exitErr *exec.ExitError
-		if errors.As(err, &exitErr) {
-			failWith(ctx, exitErr.ExitCode(), err)
-		}
-		fail(ctx, err)
+
+	if err := runProcess(ctx, locker, cfg, args); err != nil {
+		handleRunError(ctx, err, int(*cfg.conflictExitCode))
 	}
 }
 
@@ -218,7 +260,7 @@ func commandArgs(fs *pflag.FlagSet) ([]string, error) {
 
 func holderIdentity(id string, generate bool) string {
 	if generate {
-		return uuid.Must(uuid.NewRandom()).String()
+		return uuid.New().String()
 	}
 	return id
 }

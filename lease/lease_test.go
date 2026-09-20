@@ -44,6 +44,30 @@ func newSleeper(name string, duration time.Duration) *sleeper {
 	}
 }
 
+func runStaggeredLockers(
+	ctx1, ctx2 context.Context,
+	locker1, locker2 *lease.Locker,
+	s1, s2 *sleeper,
+	launchDelay time.Duration,
+) (error, error) {
+	var (
+		wg         sync.WaitGroup
+		err1, err2 error
+	)
+	wg.Add(2)
+	go func() {
+		err1 = locker1.LockAndRun(ctx1, s1.sleep)
+		wg.Done()
+	}()
+	time.Sleep(launchDelay)
+	go func() {
+		err2 = locker2.LockAndRun(ctx2, s2.sleep)
+		wg.Done()
+	}()
+	wg.Wait()
+	return err1, err2
+}
+
 var _ = Describe("Locker", func() {
 	Context("Labels", func() {
 		It("should have the labels", func() {
@@ -164,25 +188,7 @@ var _ = Describe("Locker", func() {
 				locker2, err := lease.NewLocker(namespace, tc.name, id2, clientIface, lease.WithLeaderElectTimeout(tc.electTimeout))
 				Expect(err).To(Succeed())
 
-				var (
-					wg         sync.WaitGroup
-					err1, err2 error
-				)
-				wg.Add(2)
-				// T=0, launch locker1
-				go func() {
-					err1 = locker1.LockAndRun(ctx, s1.sleep)
-					wg.Done()
-				}()
-				time.Sleep(tc.launchDelay)
-				// T+launchDelay, launch locker2
-				go func() {
-					err2 = locker2.LockAndRun(ctx, s2.sleep)
-					wg.Done()
-				}()
-				// T+sleepDuration1, locker1 should be completed
-				// If T+sleepDuration1 > electTimeout, locker2 will abort
-				wg.Wait()
+				err1, err2 := runStaggeredLockers(ctx, ctx, locker1, locker2, s1, s2, tc.launchDelay)
 				Expect(err1).To(Succeed())
 				Expect(s1.called).To(BeTrue())
 				Expect(s1.canceled).To(BeFalse())
@@ -222,25 +228,7 @@ var _ = Describe("Locker", func() {
 			defer cancel()
 			ctx2, cancel := context.WithTimeout(ctx1, timeoutDuration2)
 			defer cancel()
-			var (
-				wg         sync.WaitGroup
-				err1, err2 error
-			)
-			wg.Add(2)
-			// T=0, launch locker1
-			go func() {
-				err1 = locker1.LockAndRun(ctx1, s1.sleep)
-				wg.Done()
-			}()
-			time.Sleep(launchDelay)
-			// T+launchDelay, launch locker2
-			go func() {
-				err2 = locker2.LockAndRun(ctx2, s2.sleep)
-				wg.Done()
-			}()
-			// T+timeoutDuration, locker1 should be canceled because sleepDuration1 > timeoutDuration1
-			// T+timeoutDuration, locker2 should be canceled because sleepDuration1 > timeoutDuration2 + launchDelay
-			wg.Wait()
+			err1, err2 := runStaggeredLockers(ctx1, ctx2, locker1, locker2, s1, s2, launchDelay)
 			// locker1 should succeed because s1.sleep was successfully called
 			Expect(err1).To(Succeed())
 			Expect(s1.called).To(BeTrue())
@@ -284,25 +272,7 @@ var _ = Describe("Locker", func() {
 				locker2, err := lease.NewLocker(namespace, tc.name, id2, clientIface)
 				Expect(err).To(Succeed())
 
-				var (
-					wg         sync.WaitGroup
-					err1, err2 error
-				)
-				wg.Add(2)
-				// T=0, launch locker1
-				go func() {
-					err1 = locker1.LockAndRun(ctx, s1.sleep)
-					wg.Done()
-				}()
-				time.Sleep(tc.launchDelay)
-				// T+launchDelay, launch locker2
-				go func() {
-					err2 = locker2.LockAndRun(ctx, s2.sleep)
-					wg.Done()
-				}()
-				// T+sleepDuration1, locker1 should be completed
-				// T+sleepDuration1+some duration, locker2 should be started
-				wg.Wait()
+				err1, err2 := runStaggeredLockers(ctx, ctx, locker1, locker2, s1, s2, tc.launchDelay)
 				Expect(err1).To(Succeed())
 				Expect(s1.called).To(BeTrue())
 				Expect(s1.canceled).To(BeFalse())

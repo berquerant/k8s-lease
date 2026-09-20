@@ -187,7 +187,6 @@ The go:generate directive is at the top of lease/lease.go.
 - k8s.io/client-go              : Kubernetes API client and leader election
 - k8s.io/apimachinery           : Kubernetes object metadata types
 - github.com/spf13/pflag        : CLI flag parsing
-- github.com/google/uuid        : UUID generation for holder identity
 - golang.org/x/sys/unix         : Signal name/number conversion
 - al.essio.dev/pkg/shellescape  : Shell escaping for command arguments
 - k8s.io/klog/v2                : Structured logging

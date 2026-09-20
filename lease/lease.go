@@ -142,86 +142,12 @@ func (s *Locker) LockAndRun(ctx context.Context, f func(context.Context) error) 
 	parentCtx := ctx // keep a reference before WithCancel for use in cleanup
 	ctx, cancel := context.WithCancel(ctx)
 	logger := s.Logger(ctx)
-
-	//
-	// For LeaderElectTimeout
-	//
 	startedC := make(chan struct{})
-	type electResultType int
-	const (
-		electSucceeded electResultType = iota
-		electTimedOut
-		electCanceled
-	)
-	electResultC := make(chan electResultType)
-	go func() {
-		defer close(electResultC)
-		logger.V(1).Info("waiting the leader election", "timeout", s.leaderElectTimeout)
-		if s.leaderElectTimeout == 0 {
-			// No timeout: wait indefinitely for ctx cancellation or leadership.
-			select {
-			case <-ctx.Done():
-				electResultC <- electCanceled
-			case <-startedC:
-				logger.V(0).Info("starting the process because the leader election succeeded")
-				electResultC <- electSucceeded
-			}
-		} else {
-			select {
-			case <-ctx.Done():
-				electResultC <- electCanceled
-			case <-time.After(s.leaderElectTimeout):
-				logger.V(0).Info("aborting the process because the leader election timed out")
-				cancel()
-				electResultC <- electTimedOut
-			case <-startedC:
-				logger.V(0).Info("starting the process because the leader election succeeded")
-				electResultC <- electSucceeded
-			}
-		}
-	}()
+	electResultC := s.watchElection(ctx, cancel, startedC)
 
 	var (
-		leaseLock = &resourcelock.LeaseLock{
-			LeaseMeta: metav1.ObjectMeta{
-				Namespace: s.namespace,
-				Name:      s.name,
-			},
-			Client: s.client,
-			LockConfig: resourcelock.ResourceLockConfig{
-				Identity: s.id,
-			},
-			Labels: s.Labels(),
-		}
-
-		onStartedLeadingDoneC = make(chan error)
-		callbacks             = leaderelection.LeaderCallbacks{
-			OnStartedLeading: func(ctx context.Context) {
-				close(startedC) // notify started leading
-				logger.V(1).Info("become leader")
-				err := f(ctx)
-				cancel()
-				onStartedLeadingDoneC <- err
-			},
-			OnStoppedLeading: func() {
-				logger.V(1).Info("lost leader")
-				cancel()
-			},
-			OnNewLeader: func(identity string) {
-				if s.id == identity {
-					return
-				}
-				logger.V(1).Info("leader elected", "id", identity)
-			},
-		}
-		electionConfig = leaderelection.LeaderElectionConfig{
-			Lock:            leaseLock,
-			ReleaseOnCancel: true,
-			LeaseDuration:   s.leaseDuration,
-			RenewDeadline:   s.renewDeadline,
-			RetryPeriod:     s.retryPeriod,
-			Callbacks:       callbacks,
-		}
+		onStartedLeadingDoneC = make(chan error, 1)
+		electionConfig        = s.newElectionConfig(ctx, cancel, startedC, onStartedLeadingDoneC, f)
 	)
 
 	leaderelection.RunOrDie(ctx, electionConfig)
@@ -243,6 +169,83 @@ func (s *Locker) LockAndRun(ctx context.Context, f func(context.Context) error) 
 		}
 	}
 	return errors.Join(errs...)
+}
+
+type electResultType int
+
+const (
+	electSucceeded electResultType = iota
+	electTimedOut
+	electCanceled
+)
+
+func (s *Locker) watchElection(ctx context.Context, cancel context.CancelFunc, startedC <-chan struct{}) <-chan electResultType {
+	logger := s.Logger(ctx)
+	electResultC := make(chan electResultType, 1)
+	go func() {
+		defer close(electResultC)
+		logger.V(1).Info("waiting the leader election", "timeout", s.leaderElectTimeout)
+		var timeoutC <-chan time.Time
+		if s.leaderElectTimeout > 0 {
+			timeoutC = time.After(s.leaderElectTimeout)
+		}
+		select {
+		case <-ctx.Done():
+			electResultC <- electCanceled
+		case <-timeoutC:
+			logger.V(0).Info("aborting the process because the leader election timed out")
+			cancel()
+			electResultC <- electTimedOut
+		case <-startedC:
+			logger.V(0).Info("starting the process because the leader election succeeded")
+			electResultC <- electSucceeded
+		}
+	}()
+	return electResultC
+}
+
+func (s *Locker) newElectionConfig(
+	ctx context.Context,
+	cancel context.CancelFunc,
+	startedC chan<- struct{},
+	onDoneC chan<- error,
+	f func(context.Context) error,
+) leaderelection.LeaderElectionConfig {
+	return leaderelection.LeaderElectionConfig{
+		Lock: &resourcelock.LeaseLock{
+			LeaseMeta: metav1.ObjectMeta{
+				Namespace: s.namespace,
+				Name:      s.name,
+			},
+			Client: s.client,
+			LockConfig: resourcelock.ResourceLockConfig{
+				Identity: s.id,
+			},
+			Labels: s.Labels(),
+		},
+		ReleaseOnCancel: true,
+		LeaseDuration:   s.leaseDuration,
+		RenewDeadline:   s.renewDeadline,
+		RetryPeriod:     s.retryPeriod,
+		Callbacks: leaderelection.LeaderCallbacks{
+			OnStartedLeading: func(ctx context.Context) {
+				close(startedC)
+				s.Logger(ctx).V(1).Info("become leader")
+				err := f(ctx)
+				cancel()
+				onDoneC <- err
+			},
+			OnStoppedLeading: func() {
+				s.Logger(ctx).V(1).Info("lost leader")
+				cancel()
+			},
+			OnNewLeader: func(identity string) {
+				if s.id != identity {
+					s.Logger(ctx).V(1).Info("leader elected", "id", identity)
+				}
+			},
+		},
+	}
 }
 
 // cleanup deletes the created lease.
