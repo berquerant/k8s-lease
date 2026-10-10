@@ -4358,8 +4358,8 @@ limitations under the License.
 ## golang.org/x/net
 
 * Name: golang.org/x/net
-* Version: v0.59.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/net/+/v0.59.0:LICENSE)
+* Version: v0.60.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/net/+/v0.60.0:LICENSE)
 
 ```
 Copyright 2009 The Go Authors.
