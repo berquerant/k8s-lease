@@ -1,8 +1,8 @@
 ## al.essio.dev/pkg/shellescape
 
 * Name: al.essio.dev/pkg/shellescape
-* Version: v1.6.0
-* License: [MIT](https://github.com/alessio/shellescape/blob/v1.6.0/LICENSE)
+* Version: v1.6.1
+* License: [MIT](https://github.com/alessio/shellescape/blob/v1.6.1/LICENSE)
 
 ```
 The MIT License (MIT)
@@ -4672,8 +4672,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## k8s.io/api
 
 * Name: k8s.io/api
-* Version: v0.37.0
-* License: [Apache-2.0](https://github.com/kubernetes/api/blob/v0.37.0/LICENSE)
+* Version: v0.37.1
+* License: [Apache-2.0](https://github.com/kubernetes/api/blob/v0.37.1/LICENSE)
 
 ```
 
@@ -4882,8 +4882,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## k8s.io/apimachinery/pkg
 
 * Name: k8s.io/apimachinery/pkg
-* Version: v0.37.0
-* License: [Apache-2.0](https://github.com/kubernetes/apimachinery/blob/v0.37.0/LICENSE)
+* Version: v0.37.1
+* License: [Apache-2.0](https://github.com/kubernetes/apimachinery/blob/v0.37.1/LICENSE)
 
 ```
 
@@ -5092,8 +5092,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## k8s.io/apimachinery/third_party/forked/golang
 
 * Name: k8s.io/apimachinery/third_party/forked/golang
-* Version: v0.37.0
-* License: [BSD-3-Clause](https://github.com/kubernetes/apimachinery/blob/v0.37.0/third_party/forked/golang/LICENSE)
+* Version: v0.37.1
+* License: [BSD-3-Clause](https://github.com/kubernetes/apimachinery/blob/v0.37.1/third_party/forked/golang/LICENSE)
 
 ```
 Copyright (c) 2009 The Go Authors. All rights reserved.
@@ -5127,8 +5127,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## k8s.io/client-go
 
 * Name: k8s.io/client-go
-* Version: v0.37.0
-* License: [Apache-2.0](https://github.com/kubernetes/client-go/blob/v0.37.0/LICENSE)
+* Version: v0.37.1
+* License: [Apache-2.0](https://github.com/kubernetes/client-go/blob/v0.37.1/LICENSE)
 
 ```
 
