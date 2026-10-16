@@ -4,7 +4,7 @@ go 1.27.2
 
 require (
 	al.essio.dev/pkg/shellescape v1.6.1
-	github.com/onsi/ginkgo/v2 v2.33.0
+	github.com/onsi/ginkgo/v2 v2.33.1
 	github.com/onsi/gomega v1.44.0
 	github.com/spf13/pflag v1.0.10
 	github.com/stretchr/testify v1.12.1
