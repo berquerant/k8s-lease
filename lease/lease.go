@@ -47,7 +47,7 @@ const (
 //   - WithLabels: the additional labels of a lease
 //   - WithCleanupLease: if true, delete the created lease after processing (default: false)
 //   - WithLeaseDuration: the total time a leader node holds the lock before it expires (default: 15 seconds)
-//   - WithRenewDuration: the time limit for the leader to successfully renew its lock before stepping down (default: 10 seconds)
+//   - WithRenewDeadline: the time limit for the leader to successfully renew its lock before stepping down (default: 10 seconds)
 //   - WithRetryPeriod: the time interval between each attempt to acquire or renew the lock (default: 2 seconds)
 //   - WithLeaderElectTimeout: the timeout of the leader election (default: unlimited(0))
 func NewLocker(
