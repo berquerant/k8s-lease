@@ -78,6 +78,15 @@ func NewLocker(
 	for _, f := range opt {
 		f(config)
 	}
+	var (
+		leaseDuration      = config.LeaseDuration.Get()
+		renewDeadline      = config.RenewDeadline.Get()
+		retryPeriod        = config.RetryPeriod.Get()
+		leaderElectTimeout = config.LeaderElectTimeout.Get()
+	)
+	if err := validateDurations(leaseDuration, renewDeadline, retryPeriod, leaderElectTimeout); err != nil {
+		return nil, err
+	}
 	return &Locker{
 		namespace:          namespace,
 		name:               name,
@@ -85,11 +94,33 @@ func NewLocker(
 		client:             client,
 		labels:             config.Labels.Get(),
 		needCleanup:        config.CleanupLease.Get(),
-		leaseDuration:      config.LeaseDuration.Get(),
-		renewDeadline:      config.RenewDeadline.Get(),
-		retryPeriod:        config.RetryPeriod.Get(),
-		leaderElectTimeout: config.LeaderElectTimeout.Get(),
+		leaseDuration:      leaseDuration,
+		renewDeadline:      renewDeadline,
+		retryPeriod:        retryPeriod,
+		leaderElectTimeout: leaderElectTimeout,
 	}, nil
+}
+
+func validateDurations(leaseDuration, renewDeadline, retryPeriod, leaderElectTimeout time.Duration) error {
+	if leaseDuration < 1 {
+		return fmt.Errorf("%w: leaseDuration must be greater than zero", ErrInvalidLocker)
+	}
+	if renewDeadline < 1 {
+		return fmt.Errorf("%w: renewDeadline must be greater than zero", ErrInvalidLocker)
+	}
+	if retryPeriod < 1 {
+		return fmt.Errorf("%w: retryPeriod must be greater than zero", ErrInvalidLocker)
+	}
+	if leaseDuration <= renewDeadline {
+		return fmt.Errorf("%w: leaseDuration must be greater than renewDeadline", ErrInvalidLocker)
+	}
+	if renewDeadline <= time.Duration(leaderelection.JitterFactor*float64(retryPeriod)) {
+		return fmt.Errorf("%w: renewDeadline must be greater than retryPeriod*JitterFactor", ErrInvalidLocker)
+	}
+	if leaderElectTimeout < 0 {
+		return fmt.Errorf("%w: leaderElectTimeout must be non-negative", ErrInvalidLocker)
+	}
+	return nil
 }
 
 // Locker runs the given function under lock control.
@@ -141,16 +172,21 @@ func (s *Locker) LockAndRun(ctx context.Context, f func(context.Context) error) 
 
 	parentCtx := ctx // keep a reference before WithCancel for use in cleanup
 	ctx, cancel := context.WithCancel(ctx)
-	logger := s.Logger(ctx)
-	startedC := make(chan struct{})
-	electResultC := s.watchElection(ctx, cancel, startedC)
+	defer cancel()
 
 	var (
+		logger                = s.Logger(ctx)
+		startedC              = make(chan struct{})
 		onStartedLeadingDoneC = make(chan error, 1)
 		electionConfig        = s.newElectionConfig(ctx, cancel, startedC, onStartedLeadingDoneC, f)
 	)
+	le, err := leaderelection.NewLeaderElector(electionConfig)
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrInvalidLocker, err)
+	}
 
-	leaderelection.RunOrDie(ctx, electionConfig)
+	electResultC := s.watchElection(ctx, cancel, startedC)
+	le.Run(ctx)
 	var errs []error
 	switch <-electResultC {
 	case electTimedOut:
