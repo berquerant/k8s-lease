@@ -69,6 +69,50 @@ func runStaggeredLockers(
 }
 
 var _ = Describe("Locker", func() {
+	Context("NewLocker", func() {
+		for _, tc := range []struct {
+			title string
+			opts  []lease.ConfigOption
+		}{
+			{
+				title: "should fail when leaseDuration is not positive",
+				opts:  []lease.ConfigOption{lease.WithLeaseDuration(0)},
+			},
+			{
+				title: "should fail when renewDeadline is not positive",
+				opts:  []lease.ConfigOption{lease.WithRenewDeadline(0)},
+			},
+			{
+				title: "should fail when retryPeriod is not positive",
+				opts:  []lease.ConfigOption{lease.WithRetryPeriod(0)},
+			},
+			{
+				title: "should fail when leaseDuration <= renewDeadline",
+				opts: []lease.ConfigOption{
+					lease.WithLeaseDuration(10 * time.Second),
+					lease.WithRenewDeadline(10 * time.Second),
+				},
+			},
+			{
+				title: "should fail when renewDeadline <= retryPeriod*JitterFactor",
+				opts: []lease.ConfigOption{
+					lease.WithLeaseDuration(15 * time.Second),
+					lease.WithRenewDeadline(2 * time.Second),
+					lease.WithRetryPeriod(2 * time.Second),
+				},
+			},
+			{
+				title: "should fail when leaderElectTimeout is negative",
+				opts:  []lease.ConfigOption{lease.WithLeaderElectTimeout(-time.Second)},
+			},
+		} {
+			It(tc.title, func() {
+				_, err := lease.NewLocker(namespace, "invalid-locker", "invalid-id", clientIface, tc.opts...)
+				Expect(err).To(MatchError(lease.ErrInvalidLocker))
+			})
+		}
+	})
+
 	Context("Labels", func() {
 		It("should have the labels", func() {
 			const name = "labels-should-have-the-labels"

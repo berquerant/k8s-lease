@@ -52,6 +52,11 @@ func testCommandInvalidArguments(t *testing.T) {
 			args:  []string{"some", "--", "arg"},
 			want:  "ProgramBeforeDash",
 		},
+		{
+			title: "invalid lease duration",
+			args:  []string{"--lease-duration=5s", "--", "echo", "ok"},
+			want:  "InvalidLocker",
+		},
 	} {
 		t.Run(tc.title, func(t *testing.T) {
 			r := newKlock(tc.args...).run()
