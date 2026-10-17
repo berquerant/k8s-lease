@@ -19,4 +19,3 @@ run:
   concurrency: 4
   timeout: 3m
   allow-parallel-runners: true
-  tests: false
