@@ -130,7 +130,7 @@ Specify the command to execute after --.
 
 ### Prerequisites
 
-- Go v1.27.1+
+- Go v1.27.2+
 - Docker v28.5.1+
 - direnv (https://github.com/direnv/direnv)
 - Run make init to generate .env.github
