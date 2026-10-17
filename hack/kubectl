@@ -22,14 +22,17 @@ install() {
             ;;
     esac
     ARCH="$(arch | sed -e 's/x86_64/amd64/' -e 's/aarch64/arm64/')"
-    version="$(curl -L -s "https://dl.k8s.io/release/stable.txt")"
+    version="$(curl -fL -s "https://dl.k8s.io/release/stable.txt")"
     url="https://dl.k8s.io/release/${version}/bin/${OS_NAME}/${ARCH}/kubectl"
-    curl -L -s -o "$dest" "$url"
-    chmod +x "$dest"
+    tmp="${dest}.tmp.$$"
+    trap 'rm -f "$tmp"' EXIT
+    curl -fL -s -o "$tmp" "$url"
+    chmod +x "$tmp"
+    mv "$tmp" "$dest"
+    trap - EXIT
 }
 
 if [[ ! -x "$dest" ]] ; then
     install
 fi
-chmod +x "$dest"
 "$dest" "$@"
