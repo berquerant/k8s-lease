@@ -10,7 +10,6 @@ import (
 	"syscall"
 	"time"
 
-	"al.essio.dev/pkg/shellescape"
 	"github.com/berquerant/k8s-lease/lease"
 )
 
@@ -47,14 +46,6 @@ func (p *Process) validate() error {
 	return nil
 }
 
-func (p *Process) quotedArgs() []string {
-	xs := make([]string, len(p.Args))
-	for i, a := range p.Args {
-		xs[i] = shellescape.Quote(a)
-	}
-	return xs
-}
-
 // Run starts the specified command and waits for it to complete with the lease lock.
 func (p *Process) Run(ctx context.Context) error {
 	if err := p.validate(); err != nil {
@@ -63,9 +54,8 @@ func (p *Process) Run(ctx context.Context) error {
 
 	var (
 		logger = p.locker.Logger(ctx)
-		args   = p.quotedArgs()
 		run    = func(ctx context.Context) error {
-			cmd := exec.CommandContext(ctx, args[0], args[1:]...)
+			cmd := exec.CommandContext(ctx, p.Args[0], p.Args[1:]...)
 			cmd.Stdin = p.Stdin
 			cmd.Stdout = p.Stdout
 			cmd.Stderr = p.Stderr
