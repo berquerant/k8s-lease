@@ -188,7 +188,6 @@ The go:generate directive is at the top of lease/lease.go.
 - k8s.io/apimachinery           : Kubernetes object metadata types
 - github.com/spf13/pflag        : CLI flag parsing
 - golang.org/x/sys/unix         : Signal name/number conversion
-- al.essio.dev/pkg/shellescape  : Shell escaping for command arguments
 - k8s.io/klog/v2                : Structured logging
 - github.com/onsi/ginkgo/v2     : BDD testing framework
 - sigs.k8s.io/controller-runtime: Kubernetes client for testing

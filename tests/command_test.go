@@ -161,6 +161,12 @@ func testCommandOnetime(t *testing.T) {
 		r = newKubectl("get", "lease", name).run()
 		r.assertSuccess(t)
 	})
+	t.Run("should run with arguments containing spaces", func(t *testing.T) {
+		const name = "onetime-should-run-with-spaces"
+		r := newKlock("-l", name, "-u", "--", "echo", "hello world", "foo bar").run()
+		r.assertSuccess(t)
+		assert.Equal(t, "hello world foo bar\n", r.stdout)
+	})
 	t.Run("should delete lease", func(t *testing.T) {
 		const name = "onetime-should-delete-lease"
 		r := newKlock("-l", name, "-u", "--", "echo", "ok").run()
