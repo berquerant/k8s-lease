@@ -64,7 +64,9 @@ func TestInCluster(t *testing.T) {
 	if !assert.Nil(t, cleanup()) {
 		return
 	}
-	defer cleanup()
+	defer func() {
+		_ = cleanup()
+	}()
 	if !assert.Nil(t, newKubectl("apply", "-f", manifestPath).run().err) {
 		return
 	}

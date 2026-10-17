@@ -268,10 +268,10 @@ var _ = Describe("Locker", func() {
 			locker2, err := lease.NewLocker(namespace, name, id2, clientIface)
 			Expect(err).To(Succeed())
 
-			ctx1, cancel := context.WithTimeout(context.TODO(), timeoutDuration1)
-			defer cancel()
-			ctx2, cancel := context.WithTimeout(ctx1, timeoutDuration2)
-			defer cancel()
+			ctx1, cancel1 := context.WithTimeout(context.TODO(), timeoutDuration1)
+			defer cancel1()
+			ctx2, cancel2 := context.WithTimeout(ctx1, timeoutDuration2)
+			defer cancel2()
 			err1, err2 := runStaggeredLockers(ctx1, ctx2, locker1, locker2, s1, s2, launchDelay)
 			// locker1 should succeed because s1.sleep was successfully called
 			Expect(err1).To(Succeed())
