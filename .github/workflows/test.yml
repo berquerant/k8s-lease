@@ -18,13 +18,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@v7.0.1
         with:
           persist-credentials: "false"
       - name: Setup env
-        uses: ./.github/actions/setup-env
+        uses: $/.github/actions/setup-env
       - name: Setup go
-        uses: ./.github/actions/setup-go
+        uses: $/.github/actions/setup-go
       - name: Lint
         run: make lint
 
@@ -35,15 +35,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@v7.0.1
         with:
           persist-credentials: "false"
       - name: Setup env
-        uses: ./.github/actions/setup-env
+        uses: $/.github/actions/setup-env
       - name: Setup go
-        uses: ./.github/actions/setup-go
+        uses: $/.github/actions/setup-go
       - name: Create kind cluster
-        uses: ./.github/actions/setup-cluster
+        uses: $/.github/actions/setup-cluster
         with:
           node_image: '${{ env.KIND_NODE_IMAGE }}'
       - name: Test
@@ -56,15 +56,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@v7.0.1
         with:
           persist-credentials: "false"
       - name: Setup env
-        uses: ./.github/actions/setup-env
+        uses: $/.github/actions/setup-env
       - name: Setup go
-        uses: ./.github/actions/setup-go
+        uses: $/.github/actions/setup-go
       - name: Create kind cluster
-        uses: ./.github/actions/setup-cluster
+        uses: $/.github/actions/setup-cluster
         with:
           node_image: '${{ env.KIND_NODE_IMAGE }}'
       - name: Test
@@ -76,7 +76,7 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     steps:
-      - uses: berquerant/govulncheck-action@7c7f559180aca72a1badcead05a3d5d81fc95c30 # v1.0.3
+      - uses: berquerant/govulncheck-action@v1.0.3
         with:
           go-version-file: go.mod
           cache-dependency-path: go.sum
