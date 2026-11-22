@@ -80,3 +80,8 @@ jobs:
         with:
           go-version-file: go.mod
           cache-dependency-path: go.sum
+
+  actions-lock-verify:
+    permissions:
+      contents: read
+    uses: berquerant/reusable-workflows/.github/workflows/actions-lock-verify.yml@v0.1.0
