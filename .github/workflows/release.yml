@@ -25,7 +25,7 @@ jobs:
       - name: Setup env
         uses: $/.github/actions/setup-env
       - name: Setup go
-        uses: $/.github/actions/setup-go
+        uses: berquerant/reusable-workflows/actions/setup-go@v0.10.1
         with:
           cache: false # disable cache for clean pre-release verification
       - name: Create kind cluster
