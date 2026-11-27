@@ -41,7 +41,7 @@ jobs:
     needs: test
     permissions:
       contents: write # create GitHub releases and upload release assets
-    uses: berquerant/reusable-workflows/.github/workflows/goreleaser-release.yml@v0.3.0
+    uses: berquerant/reusable-workflows/.github/workflows/goreleaser-release.yml@v0.10.1
     with:
       setup-mode: go
       version-package: github.com/berquerant/k8s-lease/version
